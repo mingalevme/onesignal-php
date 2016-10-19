@@ -8,7 +8,8 @@ use Mingalevme\OneSignal\Client as OneS;
 $OneSignal = new OneS($oneSignalAppId, $oneSignalRestKey);
 
 $OneSignal->send('title', [
-    'type'=> 'my-notification-type'
+    'type'=> 'my-notification-type',
+    'data' => 'some-extra-data',
 ], [
     'tag1' => 'value1',
     'tag2' => 'value2',

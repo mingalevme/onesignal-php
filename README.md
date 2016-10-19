@@ -14,10 +14,11 @@ $OneSignal->send('title', [
     'tag1' => 'value1',
     'tag2' => 'value2',
 ], [
+    // ...
     OneS::SMALL_ICON => 'push_icon',
     OneS::TTL => 3600*3,
     OneS::IOS_CATEGORY => 'my-ios-category',
-    ...
+    // ...
     OneS::TAGS => [ // This will be merged with 'tag1' => 'value1' and 'tag2' => 'value2'
         [
             'key' => 'tag3',
@@ -25,5 +26,6 @@ $OneSignal->send('title', [
             'value' => 'value3'
         ],
     ]
+    // ...
 ]);
 ```

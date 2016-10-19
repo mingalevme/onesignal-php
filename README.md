@@ -1,1 +1,1 @@
-# onesignal-simple-php-client
+# Simple OneSignal PHP Client

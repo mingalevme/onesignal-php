@@ -1,0 +1,23 @@
+{
+    "name": "mingalevme/onesignal-simple-php-client",
+    "description": "Simple OneSignal PHP Client",
+    "license": "MIT",
+    "keywords": ["onesignal"],
+    "authors": [
+        {
+            "name": "Mikhail Mingaev",
+            "email": "mingalevme@gmail.com"
+        }
+    ],
+    "require": {
+        "ext-curl": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.0.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mingalevme\\OneSignal\\": "src"
+        }
+    }
+}

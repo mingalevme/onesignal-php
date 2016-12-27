@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<phpunit bootstrap="../vendor/autoload.php"
+         cacheTokens="false"
+         verbose="true"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         stopOnFailure="true"
+         stopOnError="true"
+>
+    <php>
+        <env name="ONESGINAL_TEST_APP_ID" value="262e9d8e-adea-4ac2-b90c-9826ddc9514b"/>
+    </php>
+
+    <php>
+        <env name="ONESGINAL_TEST_API_KEY" value="YTA0OGExYjktZDkyMC00MmM5LTgxOTktZjUzODcxMmQzNjdl"/>
+    </php>
+
+    <testsuites>
+        <testsuite name="base">
+            <directory>./</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

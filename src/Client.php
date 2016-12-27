@@ -2,6 +2,8 @@
 
 namespace Mingalevme\OneSignal;
 
+use Exception;
+
 class Client
 {
     const APP_ID = 'app_id';
@@ -100,7 +102,7 @@ class Client
         if ($payload) {
             $fields[self::DATA] = (array) $payload;
         }
-        
+
         if ($extra) {
             $fields = array_merge($fields, (array) $extra);
         }
@@ -133,6 +135,54 @@ class Client
         }
 
         return $this->request('notifications', $fields);
+    }
+
+    /**
+     * @param string $tmpDir
+     * @return array
+     * @throws Exception
+     */
+    public function getUsersDump($tmpDir = '/tmp')
+    {
+        $result = $this->request('players/csv_export');
+
+        if (!$result || !isset($result['csv_file_url'])) {
+            throw new \Exception('csv dump not avalable');
+        }
+
+        $csvPath = $tmpDir . '/users.csv';
+
+        $gzHandler  = gzopen($result['csv_file_url'], "rb");
+        $csvHandler = fopen($csvPath, "w");
+
+        while (!gzeof($gzHandler)) {
+            $string = gzread($gzHandler, 4096);
+            fwrite($csvHandler, $string, strlen($string));
+        }
+
+        gzclose($gzHandler);
+        fclose($csvHandler);
+
+        $csv   = file($csvPath);
+        $keys  = [];
+        $users = [];
+
+        foreach ($csv as $i => $line) {
+            $line = str_getcsv($line);
+
+            if ($i == 0) {
+                $keys = $line;
+            } else {
+                $user = [];
+                foreach ($keys as $k => $key) {
+                    $user[$key] = $line[$k];
+                }
+
+                $users[] = $user;
+            }
+        }
+
+        return $users;
     }
 
     /**

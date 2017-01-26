@@ -152,7 +152,7 @@ class Client
      * 
      * @param string $tmpdir Directory for tempfile, default is sys_get_temp_dir()
      * @return array
-     * @throws \Exception if something gone wrong
+     * @throws \Exception if something went wrong
      */
     public function export($tmpdir = null)
     {
@@ -164,7 +164,7 @@ class Client
         
         $filename = tempnam($tmpdir ? $tmpdir : sys_get_temp_dir(), 'onesignal-players-');
 
-        sleep(3); // fixed: ErrorException: gzopen(https://...): failed to open stream: HTTP request failed! HTTP/1.1 403 Forbidden
+        sleep(3); // fixes: ErrorException: gzopen(https://...): failed to open stream: HTTP request failed! HTTP/1.1 403 Forbidden
         
         $src = gzopen($result['csv_file_url'], "rb");
         $dest = fopen($filename, "w");

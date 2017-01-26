@@ -61,6 +61,7 @@ class Client
     const TTL = 'ttl';
     const PRIORITY = 'priority';
     
+    const READ_BLOCK_SIZE = 4096;
 
     protected $appId;
     protected $restAPIKey;
@@ -138,51 +139,71 @@ class Client
     }
 
     /**
-     * @param string $tmpDir
-     * @return array
-     * @throws Exception
+     * @deprecated Use *export* instead 
+     * @param type $tmpDir
      */
     public function getUsersDump($tmpDir = '/tmp')
     {
+        return $this->export($tmpDir);
+    }
+    
+    /**
+     * Get all of your current user data
+     * 
+     * @param string $tmpdir Directory for tempfile, default is sys_get_temp_dir()
+     * @return array
+     * @throws \Exception if something gone wrong
+     */
+    public function export($tmpdir = null)
+    {
         $result = $this->request('players/csv_export');
 
-        if (!$result || !isset($result['csv_file_url'])) {
-            throw new \Exception('csv dump not avalable');
+        if ((bool) $result === false || isset($result['csv_file_url']) === false) {
+            throw new \Exception('Unexpected error while requesting an players/csv_export');
+        }
+        
+        $filename = tempnam($tmpdir ? $tmpdir : sys_get_temp_dir(), 'onesignal-players-');
+
+        sleep(3); // fixed: ErrorException: gzopen(https://...): failed to open stream: HTTP request failed! HTTP/1.1 403 Forbidden
+        
+        $src = gzopen($result['csv_file_url'], "rb");
+        $dest = fopen($filename, "w");
+
+        while (!gzeof($src)) {
+            $data = gzread($src, self::READ_BLOCK_SIZE);
+            fwrite($dest, $data, strlen($data));
         }
 
-        $csvPath = $tmpDir . '/users.csv';
-
-        $gzHandler  = gzopen($result['csv_file_url'], "rb");
-        $csvHandler = fopen($csvPath, "w");
-
-        while (!gzeof($gzHandler)) {
-            $string = gzread($gzHandler, 4096);
-            fwrite($csvHandler, $string, strlen($string));
+        fclose($dest);
+        gzclose($src);
+        
+        $handle = fopen($filename, 'r');
+        
+        if ((bool) $handle === false) {
+            throw new \Exception("Unexpected error while opening csv-file");
         }
-
-        gzclose($gzHandler);
-        fclose($csvHandler);
-
-        $csv   = file($csvPath);
-        $keys  = [];
-        $users = [];
-
-        foreach ($csv as $i => $line) {
-            $line = str_getcsv($line);
-
-            if ($i == 0) {
-                $keys = $line;
-            } else {
-                $user = [];
-                foreach ($keys as $k => $key) {
-                    $user[$key] = $line[$k];
-                }
-
-                $users[] = $user;
+        
+        $keys = fgetcsv($handle);
+        
+        if ((bool) $keys === false) {
+            throw new \Exception("Unexpected error while reading csv-file");
+        }
+        
+        $players = [];
+        
+        while (($line = fgetcsv($handle)) !== false) {
+            $player = [];
+            foreach ($keys as $i => $key) {
+                $player[$key] = $line[$i];
             }
+            $players[] = $player;
         }
-
-        return $users;
+        
+        fclose($handle);
+        
+        unlink($filename);
+        
+        return $players;
     }
 
     /**

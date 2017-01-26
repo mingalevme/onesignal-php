@@ -15,7 +15,7 @@ class ClientTest extends TestCase
     {
         parent::setUpBeforeClass();
 
-        $appId  = getenv('ONESGINAL_TEST_APP_ID');
+        $appId = getenv('ONESGINAL_TEST_APP_ID');
         $apiKey = getenv('ONESGINAL_TEST_API_KEY');
 
         if (empty($appId)) {
@@ -30,9 +30,9 @@ class ClientTest extends TestCase
     }
 
 
-    public function testGetUsersDump()
+    public function testExport()
     {
-        $users  = self::$client->getUsersDump();
+        $users = self::$client->export();
 
         $this->assertTrue(is_array($users));
         $this->assertTrue(count($users) > 0);
@@ -52,7 +52,19 @@ class ClientTest extends TestCase
 
     public function testSend()
     {
-        $result = self::$client->send('phpunit test message');
-        var_dump($result);
+        try {
+            $result = self::$client->send('(Mingalevme\OneSignal) PHPUnit Test Message, sorry if you saw this :)', null, null, [
+                Client::INCLUDED_SEGMENTS => ['All'],
+            ]);
+        } catch (\Exception $e) {
+            if ($e->getMessage() !== 'All included players are not subscribed') {
+                throw $e;
+            } else {
+                return;
+            }
+        }
+        
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayHasKey('recipients', $result);
     }
 }

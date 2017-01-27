@@ -137,15 +137,6 @@ class Client
 
         return $this->request('notifications', $fields);
     }
-
-    /**
-     * @deprecated Use *export* instead 
-     * @param type $tmpDir
-     */
-    public function getUsersDump($tmpDir = '/tmp')
-    {
-        return $this->export($tmpDir);
-    }
     
     /**
      * Get all of your current user data

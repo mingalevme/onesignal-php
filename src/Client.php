@@ -155,9 +155,18 @@ class Client
         
         $filename = tempnam($tmpdir ? $tmpdir : sys_get_temp_dir(), 'onesignal-players-');
 
-        sleep(3); // fixes: ErrorException: gzopen(https://...): failed to open stream: HTTP request failed! HTTP/1.1 403 Forbidden
+        foreach (range(1, 3) as $i) {
+            try {
+                $src = gzopen($result['csv_file_url'], "rb");
+            } catch (\ErrorException $e) {
+                sleep($i); // fixes: ErrorException: gzopen(https://...): failed to open stream: HTTP request failed! HTTP/1.1 403 Forbidden
+            }
+        }
         
-        $src = gzopen($result['csv_file_url'], "rb");
+        if (isset($src) === false) {
+            throw $e;
+        }
+        
         $dest = fopen($filename, "w");
 
         while (!gzeof($src)) {
@@ -169,10 +178,6 @@ class Client
         gzclose($src);
         
         $handle = fopen($filename, 'r');
-        
-        if ((bool) $handle === false) {
-            throw new \Exception("Unexpected error while opening csv-file");
-        }
         
         $keys = fgetcsv($handle);
         

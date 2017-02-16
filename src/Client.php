@@ -2,15 +2,25 @@
 
 namespace Mingalevme\OneSignal;
 
-use Exception;
+use Mingalevme\OneSignal\Exception;
+use Mingalevme\OneSignal\Exception\BadRequest;
+use Mingalevme\OneSignal\Exception\InvalidPlayerIds;
+use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 
 class Client
 {
     const APP_ID = 'app_id';
+    
+    const GET       = 'get';
+    const POST      = 'post';
+    const PUT       = 'put';
+    const DELETE    = 'delete';
+    
+    const BASE_URL  = 'https://onesignal.com/api/v1';
 
-    const CONTENTS = 'contents';
-    const HEADINGS = 'headings';
-    const SUBTITLE = 'subtitle'; // iOS 10+
+    const CONTENTS  = 'contents';
+    const HEADINGS  = 'headings';
+    const SUBTITLE  = 'subtitle'; // iOS 10+
 
     CONST IS_IOS        = 'isIos';
     const IS_ANDROID    = 'isAndroid';
@@ -65,6 +75,8 @@ class Client
 
     protected $appId;
     protected $restAPIKey;
+    
+    protected $csvDownloadingTimeout = 30;
 
     /**
      *
@@ -94,18 +106,18 @@ class Client
             $content = $title;
         }
 
-        $fields = [];
+        $data = [];
 
         if (count($content) > 0) {
-            $fields[self::CONTENTS] = $content;
+            $data[self::CONTENTS] = $content;
         }
 
         if ($payload) {
-            $fields[self::DATA] = (array) $payload;
+            $data[self::DATA] = (array) $payload;
         }
 
         if ($extra) {
-            $fields = array_merge($fields, (array) $extra);
+            $data = array_merge($data, (array) $extra);
         }
 
         if (count($content) > 0 && (isset($content['en']) === false || is_string($content['en']) === false || trim($content['en']) === '')) {
@@ -123,71 +135,135 @@ class Client
         }
 
         if ($tags) {
-            if (isset($fields[self::TAGS])) {
-                $fields[self::TAGS] = array_merge(array_values($tags), $fields[self::TAGS]);
+            if (isset($data[self::TAGS])) {
+                $data[self::TAGS] = array_merge(array_values($tags), $data[self::TAGS]);
             } else {
-                $fields[self::TAGS] = array_values($tags);
+                $data[self::TAGS] = array_values($tags);
             }
         }
         
         // You must include which players, segments, or tags you wish to send this notification to
-        if (empty($fields[self::INCLUDE_PLAYER_IDS]) && empty($fields[self::INCLUDED_SEGMENTS]) && empty($fields[self::TAGS])) {
-            $fields[self::INCLUDED_SEGMENTS] = self::SEGMENTS_ALL;
+        if (empty($data[self::INCLUDE_PLAYER_IDS]) && empty($data[self::INCLUDED_SEGMENTS]) && empty($data[self::TAGS])) {
+            $data[self::INCLUDED_SEGMENTS] = self::SEGMENTS_ALL;
         }
-
-        return $this->request('notifications', $fields);
+        
+        $data[self::APP_ID] = $this->appId;
+        
+        $url = self::BASE_URL . '/notifications';
+        
+        $respone = $this->request(self::POST, $url, $data);
+        
+        if (isset($respone['errors']['invalid_player_ids'])) {
+            throw new InvalidPlayerIds($respone['errors']['invalid_player_ids']);
+        } elseif (isset($respone['recipients']) && $respone['recipients'] === 0) {
+            throw new AllIncludedPlayersAreNotSubscribed();
+        }
+        
+        return $respone;
     }
     
     /**
-     * Get all of your current user data
+     * View the details of multiple devices in one of your OneSignal apps
      * 
-     * @param string $tmpdir Directory for tempfile, default is sys_get_temp_dir()
-     * @return array
-     * @throws \Exception if something went wrong
+     * @param type $limit
+     * @param type $offset
      */
-    public function export($tmpdir = null)
+    public function getPlayers($limit = null, $offset = null)
     {
-        $result = $this->request('players/csv_export');
-
-        if ((bool) $result === false || isset($result['csv_file_url']) === false) {
-            throw new \Exception('Unexpected error while requesting an players/csv_export');
-        }
+        $data = [
+            'app_id' => $this->appId,
+            'limit' => $limit,
+            'offset' => $offset,
+        ];
         
-        $filename = tempnam($tmpdir ? $tmpdir : sys_get_temp_dir(), 'onesignal-players-');
+        $url = self::BASE_URL . '/players?' . \http_build_query($data);
+        
+        $response = $this->request(self::GET, $url);
 
-        foreach (range(1, 3) as $i) {
-            try {
-                $src = gzopen($result['csv_file_url'], "rb");
-            } catch (\ErrorException $e) {
-                sleep($i); // fixes: ErrorException: gzopen(https://...): failed to open stream: HTTP request failed! HTTP/1.1 403 Forbidden
+        return $response;
+    }
+    
+    /**
+     * Returns all players via View devices (/players) method
+     * (Danger!) Unavailable for Apps > 100,000 users
+     * 
+     * @return array
+     */
+    public function getAllPlayersViaPlayers()
+    {
+        $limit = 299;
+        
+        $result = [];
+        
+        while (true) {
+            $players = $this->getPlayers($limit + 1, count($result))['players'];
+            $result = array_merge($result, $players);
+            if (count($players) <= $limit) {
+                break;
             }
         }
         
-        if (isset($src) === false) {
-            throw $e;
+        return $result;
+    }
+
+    /**
+     * Returns a URL to compressed CSV export of all of your current user data
+     * 
+     * @param string $extra Additional fields that you wish to include. Currently supports location, country, and rooted.
+     * @param string $tmpdir Directory for tempfile, default is sys_get_temp_dir()
+     * @return string URL to compressed CSV export of all of your current user data
+     * @throws \Exception if something went wrong
+     */
+    public function export($extra = null)
+    {
+        $url = self::BASE_URL . '/players/csv_export';
+        
+        $data = [self::APP_ID => $this->appId];
+        
+        if ($extra) {
+            $data['extra_fields'] = (array) $extra;
         }
         
-        $dest = fopen($filename, "w");
+        $response = $this->request(self::POST, $url, $data);
 
-        while (!gzeof($src)) {
-            $data = gzread($src, self::READ_BLOCK_SIZE);
-            fwrite($dest, $data, strlen($data));
+        if ((bool) $response === false || isset($response['csv_file_url']) === false) {
+            throw new \Exception('Unexpected error while requesting an players/csv_export');
         }
+        
+        return $response['csv_file_url'];
+    }
 
-        fclose($dest);
-        gzclose($src);
+    /**
+     * Returns all players via CSV Export (/csv_export) Method
+     * 
+     * @param array $extra Additional fields that you wish to include. Currently supports location, country, and rooted.
+     * @param string $tmpdir This dir is used to download remote gz-file and to unpack it to raw csv-file, default is sys_get_temp_dir()
+     * @return array
+     * @throws \Exception
+     */
+    public function getAllPlayersViaExport($extra = null, $tmpdir = null)
+    {
+        $gzCsvUrl = $this->export($extra);
+        $fgz = ($tmpdir ? $tmpdir : sys_get_temp_dir()) . "/onesignal-players-{$this->appId}-" . date('Y-m-d-H-i-s') . '.csv.gz';
+        $fcsv = str_replace('.csv.gz', '.csv', $fgz);
         
-        $handle = fopen($filename, 'r');
+        $this->downloadCsv($this->csvDownloadingTimeout, $gzCsvUrl, $fgz);
         
-        $keys = fgetcsv($handle);
+        $this->ungzip($fgz, $fcsv);
+        
+        unlink($fgz);
+        
+        $csvhandle = fopen($fcsv, 'r');
+        
+        $keys = fgetcsv($csvhandle);
         
         if ((bool) $keys === false) {
-            throw new \Exception("Unexpected error while reading csv-file");
+            throw new \Exception("Unexpected error while reading csv-file {$fcsv}");
         }
         
         $players = [];
         
-        while (($line = fgetcsv($handle)) !== false) {
+        while (($line = fgetcsv($csvhandle)) !== false) {
             $player = [];
             foreach ($keys as $i => $key) {
                 $player[$key] = $line[$i];
@@ -195,52 +271,122 @@ class Client
             $players[] = $player;
         }
         
-        fclose($handle);
+        fclose($csvhandle);
         
-        unlink($filename);
+        unlink($fcsv);
         
         return $players;
     }
+    
+    /**
+     * Download a remote resource to a local file
+     * 
+     * @param string $src
+     * @param string $dest
+     * @return boolean
+     */
+    protected function downloadCsv($timeout, $src, $dest)
+    {
+        // sleep(1); // fixes: ErrorException: gzopen(https://...): failed to open stream: HTTP request failed! HTTP/1.1 403 Forbidden
+        
+        $start = time();
+        
+        while (time() - $start < $timeout) {
+            $fp = fopen($dest, 'w');
+        
+            $ch = curl_init($src);
+
+            curl_setopt($ch, \CURLOPT_FILE, $fp); 
+            curl_setopt($ch, \CURLOPT_FOLLOWLOCATION, true);
+            curl_exec($ch); 
+
+            $info = curl_getinfo($ch);
+            
+            curl_close($ch);
+
+            fclose($fp);
+            
+            if ($info['http_code'] === 200) {
+                return true;
+            } else {
+                sleep(1);
+            }
+        }
+        
+        throw new Exception(file_get_contents($dest), "Maximum execution time of {$timeout}s exceeded while downloading a remote resource {$src}");
+    }
+    
+    protected function ungzip($src, $dest)
+    {
+        $zp = gzopen($src, 'rb');
+        
+        $fp = fopen($dest, 'w');
+        
+        while (gzeof($zp) === false) {
+            $data = gzread($zp, self::READ_BLOCK_SIZE);
+            fwrite($fp, $data, strlen($data));
+        }
+
+        gzclose($zp);
+        
+        fclose($fp);
+        
+        return true;
+    }
 
     /**
-     * @param string $action
-     * @param array $fields
-     * @return mixed|null
+     * Makes a request to OneSignal
+     * 
+     * @param string $method
+     * @param string $url
+     * @param array $data
+     * @param array $info
+     * @return array
      * @throws Exception
      */
-    protected function request($action, array $fields = [])
+    protected function request($method, $url, $data = null, &$info = null)
     {
         $ch = curl_init();
-
-        $fields[self::APP_ID] = $this->appId;
         
-        curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/{$action}");
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            "Content-Type: application/json",
+        $headers = [
             "Authorization: Basic {$this->restAPIKey}",
-        ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, false);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
+        ];
+        
+        curl_setopt($ch, \CURLOPT_URL, $url);
+        curl_setopt($ch, \CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, \CURLOPT_HEADER, false);
+        
+        if ($method === self::POST) {
+            curl_setopt($ch, \CURLOPT_POST, true);
+            $headers[] = "Content-Type: application/json";
+            curl_setopt($ch, \CURLOPT_POSTFIELDS, json_encode($data, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
+        }
+        
+        curl_setopt($ch, \CURLOPT_HTTPHEADER, $headers);
+        
         $responseRaw = curl_exec($ch);
         
-        try {
-            $response = json_decode($responseRaw, true);
-        } catch (\Exception $e) {
-            $response = NULL;
-        }
-
         $info = curl_getinfo($ch);
-
+        
         curl_close($ch);
-
-        if (isset($response['errors'][0]) || $info['http_code'] != 200) {
-            throw new Exception(isset($response['errors'][0]) ? $response['errors'][0] : $responseRaw);
+        
+        try {
+            $response = \json_decode($responseRaw, true);
+        } catch (\Exception $e) {
+            $response = null;
         }
-
+        
+        if ($response === null) {
+            throw new Exception('Unexpected response ' . \json_encode([
+                'http-status-code' => $info['http_code'],
+                'response' => $responseRaw,
+            ]));
+        }
+        
+        if ($info['http_code'] !== 200) {
+            throw new BadRequest($response);
+        }
+        
         return $response;
     }
 }

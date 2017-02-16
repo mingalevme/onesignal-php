@@ -2,6 +2,7 @@
 
 use PHPUnit\Framework\TestCase;
 use Mingalevme\OneSignal\Client;
+use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 
 class ClientTest extends TestCase
 {
@@ -29,39 +30,36 @@ class ClientTest extends TestCase
         self::$client = new Client($appId, $apiKey);
     }
 
-
     public function testExport()
     {
-        $users = self::$client->export();
-
-        $this->assertTrue(is_array($users));
-        $this->assertTrue(count($users) > 0);
-
-        foreach ($users as $user) {
-            $this->assertArrayHasKey('id', $user);
-            $this->assertArrayHasKey('identifier', $user);
-            $this->assertArrayHasKey('language', $user);
-            $this->assertArrayHasKey('timezone', $user);
-            $this->assertArrayHasKey('tags', $user);
-            $this->assertArrayHasKey('created_at', $user);
-        }
-
-        $this->assertTrue(true);
+        $url = self::$client->export();
+        $this->assertTrue(ifilter_var($url, \FILTER_VALIDATE_URL));
     }
 
+    public function testGetAllPlayersViaExport()
+    {
+        $players = self::$client->getAllPlayersViaExport();
+
+        $this->assertTrue(is_array($players));
+        $this->assertTrue(count($players) > 0);
+    }
+
+    public function testGetAllPlayersViaPlayers()
+    {
+        $players = self::$client->getAllPlayersViaPlayers();
+
+        $this->assertTrue(is_array($players));
+        $this->assertTrue(count($players) > 0);
+    }
 
     public function testSend()
     {
         try {
-            $result = self::$client->send('(Mingalevme\OneSignal) PHPUnit Test Message, sorry if you saw this :)', null, null, [
+            $result = self::$client->send('(Mingalevme\OneSignal) PHPUnit Test Message, sorry if you are reading me :)', null, null, [
                 Client::INCLUDED_SEGMENTS => ['All'],
             ]);
-        } catch (\Exception $e) {
-            if ($e->getMessage() !== 'All included players are not subscribed') {
-                throw $e;
-            } else {
-                return;
-            }
+        } catch (AllIncludedPlayersAreNotSubscribed $e) {
+            return;
         }
         
         $this->assertArrayHasKey('id', $result);

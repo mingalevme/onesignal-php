@@ -33,7 +33,7 @@ class ClientTest extends TestCase
     public function testExport()
     {
         $url = self::$client->export();
-        $this->assertTrue(ifilter_var($url, \FILTER_VALIDATE_URL));
+        $this->assertTrue(is_string(filter_var($url, \FILTER_VALIDATE_URL)));
     }
 
     public function testGetAllPlayersViaExport()

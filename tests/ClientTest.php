@@ -57,6 +57,7 @@ class ClientTest extends TestCase
         try {
             $result = self::$client->send('(Mingalevme\OneSignal) PHPUnit Test Message, sorry if you are reading me :)', null, null, [
                 Client::INCLUDED_SEGMENTS => ['All'],
+                Client::TTL => 1,
             ]);
         } catch (AllIncludedPlayersAreNotSubscribed $e) {
             return;

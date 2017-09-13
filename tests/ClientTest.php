@@ -1,6 +1,7 @@
 <?php
 
-use PHPUnit\Framework\TestCase;
+namespace Mingalevme\Tests\OneSignal;
+
 use Mingalevme\OneSignal\Client;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 

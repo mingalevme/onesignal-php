@@ -241,13 +241,13 @@ class Client
      * @return array
      * @throws \Exception
      */
-    public function getAllPlayersViaExport($extra = null, $tmpdir = null)
+    public function getAllPlayersViaExport($extra = null, $tmpdir = null, $timeout = null)
     {
         $gzCsvUrl = $this->export($extra);
         $fgz = ($tmpdir ? $tmpdir : sys_get_temp_dir()) . "/onesignal-players-{$this->appId}-" . date('Y-m-d-H-i-s') . '.csv.gz';
         $fcsv = str_replace('.csv.gz', '.csv', $fgz);
         
-        $this->downloadCsv($this->csvDownloadingTimeout, $gzCsvUrl, $fgz);
+        $this->downloadCsv(is_null($timeout) ? $this->csvDownloadingTimeout : $timeout, $gzCsvUrl, $fgz);
         
         $this->ungzip($fgz, $fcsv);
         
@@ -281,9 +281,11 @@ class Client
     /**
      * Download a remote resource to a local file
      * 
-     * @param string $src
-     * @param string $dest
+     * @param int $timeout
+     * @param string $src Source
+     * @param string $dest Destination
      * @return boolean
+     * @throws Exception
      */
     protected function downloadCsv($timeout, $src, $dest)
     {
@@ -291,7 +293,7 @@ class Client
         
         $start = time();
         
-        while (time() - $start < $timeout) {
+        while ($timeout === 0 || time() - $start < $timeout) {
             $fp = fopen($dest, 'w');
         
             $ch = curl_init($src);

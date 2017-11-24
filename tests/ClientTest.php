@@ -12,7 +12,6 @@ class ClientTest extends TestCase
      */
     protected static $client;
 
-
     public static function setUpBeforeClass()
     {
         parent::setUpBeforeClass();

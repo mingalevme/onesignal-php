@@ -2,12 +2,14 @@
 
 namespace Mingalevme\OneSignal;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareInterface;
 use Mingalevme\OneSignal\Exception;
 use Mingalevme\OneSignal\Exception\BadRequest;
 use Mingalevme\OneSignal\Exception\InvalidPlayerIds;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 
-class Client
+class Client implements LoggerAwareInterface
 {
     const APP_ID = 'app_id';
     
@@ -78,6 +80,15 @@ class Client
     
     protected $csvDownloadingTimeout = 30;
 
+    protected $toClose = [];
+    protected $toUnlink = [];
+
+    /**
+     *
+     * @var LoggerInterface
+     */
+    protected $logger;
+
     /**
      *
      * @param string $appId
@@ -87,6 +98,7 @@ class Client
     {
         $this->appId = $appId;
         $this->restAPIKey = $restAPIKey;
+        $this->logger = new \Psr\Log\NullLogger();
     }
 
     /**
@@ -233,15 +245,7 @@ class Client
         return $response['csv_file_url'];
     }
 
-    /**
-     * Returns all players via CSV Export (/csv_export) Method
-     * 
-     * @param array $extra Additional fields that you wish to include. Currently supports location, country, and rooted.
-     * @param string $tmpdir This dir is used to download remote gz-file and to unpack it to raw csv-file, default is sys_get_temp_dir()
-     * @return array
-     * @throws \Exception
-     */
-    public function getAllPlayersViaExport($extra = null, $tmpdir = null, $timeout = null)
+    public function getNextPlayerViaExport($extra = null, $tmpdir = null, $timeout = null)
     {
         $gzCsvUrl = $this->export($extra);
         $fgz = ($tmpdir ? $tmpdir : sys_get_temp_dir()) . "/onesignal-players-{$this->appId}-" . date('Y-m-d-H-i-s') . '.csv.gz';
@@ -255,25 +259,45 @@ class Client
         
         $csvhandle = fopen($fcsv, 'r');
         
+        $this->toClose[$fcsv] = $csvhandle;
+        $this->toUnlink[$fcsv] = $fcsv;
+        
         $keys = fgetcsv($csvhandle);
         
         if ((bool) $keys === false) {
             throw new \Exception("Unexpected error while reading csv-file {$fcsv}");
         }
         
-        $players = [];
-        
         while (($line = fgetcsv($csvhandle)) !== false) {
             $player = [];
             foreach ($keys as $i => $key) {
                 $player[$key] = $line[$i];
             }
-            $players[] = $player;
+            yield $player;
         }
         
         fclose($csvhandle);
+        unset($this->toClose[$fcsv]);
         
         unlink($fcsv);
+        unset($this->toUnlink[$fcsv]);
+    }
+    
+    /**
+     * Returns all players via CSV Export (/csv_export) Method
+     * 
+     * @param array $extra Additional fields that you wish to include. Currently supports location, country, and rooted.
+     * @param string $tmpdir This dir is used to download remote gz-file and to unpack it to raw csv-file, default is sys_get_temp_dir()
+     * @return array
+     * @throws \Exception
+     */
+    public function getAllPlayersViaExport($extra = null, $tmpdir = null, $timeout = null)
+    {
+        $players = [];
+        
+        foreach($this->getNextPlayerViaExport($extra, $tmpdir, $timeout) as $player) {
+            $players[] = $player;
+        }
         
         return $players;
     }
@@ -390,5 +414,40 @@ class Client
         }
         
         return $response;
+    }
+    
+    public function __destruct()
+    {
+        foreach ($this->toClose as $fname => $handle) {
+            if (is_resource($handle)) {
+                try {
+                    fclose($handle);
+                } catch (\ErrorException $e) {
+                    $this->logger->warning("Error while closing resource \"{$fname}\": {$e->getMessage()}");
+                }
+            }
+        }
+        
+        foreach ($this->toUnlink as $fname) {
+            if (is_file($fname)) {
+                try {
+                    unlink($fname);
+                } catch (\ErrorException $e) {
+                    $this->logger->warning("Error while removing file \"{$fname}\": {$e->getMessage()}");
+                }
+            }
+        }
+    }
+    
+    /**
+     * Sets a logger instance on the object.
+     *
+     * @param LoggerInterface $logger
+     *
+     * @return void
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
     }
 }

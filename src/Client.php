@@ -163,15 +163,15 @@ class Client implements LoggerAwareInterface
         
         $url = self::BASE_URL . '/notifications';
         
-        $respone = $this->request(self::POST, $url, $data);
-        
-        if (isset($respone['errors']['invalid_player_ids'])) {
-            throw new InvalidPlayerIds($respone['errors']['invalid_player_ids']);
-        } elseif (isset($respone['recipients']) && $respone['recipients'] === 0) {
+        $response = $this->request(self::POST, $url, $data);
+
+        if (isset($response['errors']['invalid_player_ids'])) {
+            throw new InvalidPlayerIds($response['errors']['invalid_player_ids']);
+        } elseif (isset($response['recipients']) && $response['recipients'] === 0) {
             throw new AllIncludedPlayersAreNotSubscribed();
         }
         
-        return $respone;
+        return $response;
     }
     
     /**
@@ -401,7 +401,7 @@ class Client implements LoggerAwareInterface
         } catch (\Exception $e) {
             $response = null;
         }
-        
+
         if ($response === null) {
             throw new Exception('Unexpected response ' . \json_encode([
                 'http-status-code' => $info['http_code'],

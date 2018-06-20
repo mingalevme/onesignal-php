@@ -44,6 +44,8 @@ class Client implements LoggerAwareInterface
     //...
     const TAGS = 'tags';
     // ...
+    const COLLAPSE_ID = 'collapse_id'; // This is known as apns-collapse-id on iOS 10+ and collapse_key on Android.
+    // ...
     const SMALL_ICON = 'small_icon';
     const LARGE_ICON = 'large_icon';
     const ANDROID_SOUND = 'android_sound';
@@ -60,7 +62,8 @@ class Client implements LoggerAwareInterface
     const IOS_BADGE_TYPE = 'ios_badgeType';
     const IOS_BADGE_COUNT = 'ios_badgeCount';
     const IOS_CATEGORY = 'ios_category';
-    const COLLAPSE_ID = 'collapse_id'; // This is known as apns-collapse-id on iOS 10+ and collapse_key on Android.
+    const CONTENT_AVAILABLE = 'content_available';
+    const MUTABLE_CONTENT = 'mutable_content';
     const IOS_ATTACHMENTS = 'ios_attachments'; // iOS 10+
     // ...
     const BUTTONS = 'buttons';

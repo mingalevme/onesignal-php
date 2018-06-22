@@ -75,6 +75,9 @@ class Client implements LoggerAwareInterface
     // ...
     const TTL = 'ttl';
     const PRIORITY = 'priority';
+
+    const PRIORITY_LOW = 5;
+    const PRIORITY_HIGH = 10;
     
     const READ_BLOCK_SIZE = 4096;
 

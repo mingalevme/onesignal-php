@@ -2,7 +2,9 @@
 
 namespace Mingalevme\OneSignal\Exception;
 
-class BadRequest extends \Mingalevme\OneSignal\Exception
+use Mingalevme\OneSignal\Exception;
+
+class BadRequest extends Exception
 {
     /**
      * @var array

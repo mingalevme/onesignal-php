@@ -8,6 +8,7 @@ use Mingalevme\OneSignal\Exception;
 use Mingalevme\OneSignal\Exception\BadRequest;
 use Mingalevme\OneSignal\Exception\InvalidPlayerIds;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
+use Psr\Log\NullLogger;
 
 class Client implements LoggerAwareInterface
 {
@@ -53,7 +54,7 @@ class Client implements LoggerAwareInterface
     const ANDROID_LED_COLOR = 'android_led_color';
     const ANDROID_ACCENT_COLOR = 'android_accent_color'; //5.0+5.
     const ANDROID_VISIBILITY = 'android_visibility';
-    const ANDROID_GROUD = 'android_group';
+    const ANDROID_GROUP = 'android_group';
     const ANDROID_GROUP_MESSAGE = 'android_group_message';
     const ANDROID_BACKGROUND_DATA = 'android_background_data';
     // ...
@@ -81,6 +82,10 @@ class Client implements LoggerAwareInterface
     
     const READ_BLOCK_SIZE = 4096;
 
+    // -------
+
+    const OPTION_CURL_OPTIONS = 'curl_opts';
+
     protected $appId;
     protected $restAPIKey;
     
@@ -89,28 +94,37 @@ class Client implements LoggerAwareInterface
     protected $toClose = [];
     protected $toUnlink = [];
 
-    /**
-     *
-     * @var LoggerInterface
-     */
+    /** @var array */
+    protected $options;
+
+    /** @var LoggerInterface */
     protected $logger;
 
     /**
      *
      * @param string $appId
      * @param string $restAPIKey
+     * @param array|null $options
      */
-    public function __construct($appId, $restAPIKey)
+    public function __construct($appId, $restAPIKey, array $options = null)
     {
         $this->appId = $appId;
         $this->restAPIKey = $restAPIKey;
-        $this->logger = new \Psr\Log\NullLogger();
+        $this->logger = new NullLogger();
+        $this->options = (array) $options;
+
+        if (array_key_exists(self::OPTION_CURL_OPTIONS, $this->options)) {
+            if (!is_array($this->options[self::OPTION_CURL_OPTIONS])) {
+                throw new \RuntimeException('Curl options must be an array');
+            }
+        }
     }
 
     /**
-     * @param null $title
-     * @param null $payload
-     * @param null $extra
+     * @param string|null $title
+     * @param array|null $payload
+     * @param array|null $whereTags
+     * @param array|null $extra
      * @return mixed|null
      * @throws Exception
      */
@@ -183,10 +197,11 @@ class Client implements LoggerAwareInterface
     /**
      * View the details of multiple devices in one of your OneSignal apps
      * 
-     * @param type $limit
-     * @param type $offset
+     * @param int $limit
+     * @param int $offset
+     * @return array
      */
-    public function getPlayers($limit = null, $offset = null)
+    public function getPlayers($limit=null, $offset=null)
     {
         $data = [
             'app_id' => $this->appId,
@@ -228,9 +243,7 @@ class Client implements LoggerAwareInterface
      * Returns a URL to compressed CSV export of all of your current user data
      * 
      * @param string $extra Additional fields that you wish to include. Currently supports location, country, and rooted.
-     * @param string $tmpdir Directory for tempfile, default is sys_get_temp_dir()
      * @return string URL to compressed CSV export of all of your current user data
-     * @throws \Exception if something went wrong
      */
     public function export($extra = null)
     {
@@ -245,7 +258,7 @@ class Client implements LoggerAwareInterface
         $response = $this->request(self::POST, $url, $data);
 
         if ((bool) $response === false || isset($response['csv_file_url']) === false) {
-            throw new \Exception('Unexpected error while requesting an players/csv_export');
+            throw new Exception('Unexpected error while requesting an players/csv_export');
         }
         
         return $response['csv_file_url'];
@@ -271,7 +284,7 @@ class Client implements LoggerAwareInterface
         $keys = fgetcsv($csvhandle);
         
         if ((bool) $keys === false) {
-            throw new \Exception("Unexpected error while reading csv-file {$fcsv}");
+            throw new Exception("Unexpected error while reading csv-file {$fcsv}");
         }
         
         while (($line = fgetcsv($csvhandle)) !== false) {
@@ -395,6 +408,15 @@ class Client implements LoggerAwareInterface
         }
         
         curl_setopt($ch, \CURLOPT_HTTPHEADER, $headers);
+
+        curl_setopt($ch, \CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, \CURLOPT_TIMEOUT, 15);
+
+        if (!empty($this->options[self::OPTION_CURL_OPTIONS])) {
+            foreach ($this->options[self::OPTION_CURL_OPTIONS] as $option => $value) {
+                curl_setopt($ch, $option, $value);
+            }
+        }
         
         $responseRaw = curl_exec($ch);
         
@@ -410,7 +432,7 @@ class Client implements LoggerAwareInterface
 
         if ($response === null) {
             throw new Exception('Unexpected response ' . \json_encode([
-                'http-status-code' => $info['http_code'],
+                'http-status-code' => $info['http_code'] ?? '<null>',
                 'response' => $responseRaw,
             ]));
         }
@@ -449,7 +471,6 @@ class Client implements LoggerAwareInterface
      * Sets a logger instance on the object.
      *
      * @param LoggerInterface $logger
-     *
      * @return void
      */
     public function setLogger(LoggerInterface $logger)

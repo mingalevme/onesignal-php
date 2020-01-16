@@ -12,79 +12,144 @@ use Psr\Log\NullLogger;
 
 class Client implements LoggerAwareInterface
 {
-    const APP_ID = 'app_id';
-    
-    const GET       = 'get';
-    const POST      = 'post';
-    const PUT       = 'put';
-    const DELETE    = 'delete';
-    
-    const BASE_URL  = 'https://onesignal.com/api/v1';
+    const BASE_URL = 'https://onesignal.com/api/v1';
 
-    const CONTENTS  = 'contents';
-    const HEADINGS  = 'headings';
-    const SUBTITLE  = 'subtitle'; // iOS 10+
-
-    CONST IS_IOS        = 'isIos';
-    const IS_ANDROID    = 'isAndroid';
-    const IS_WP         = 'isWP';
-    const IS_ADM        = 'isAdm';
-    const IS_CHROME     = 'isChrome';
-    const IS_CHROME_WEB = 'isChromeWeb';
-    const IS_SAFARI     = 'isSafari';
-    const IS_ANY_WEB    = 'isAnyWeb';
-
+    // Send to Segments
     const INCLUDED_SEGMENTS = 'included_segments';
-    const SEGMENTS_ALL      = 'ALL';
+    const SEGMENTS_ALL = 'ALL';
     const EXCLUDED_SEGMENTS = 'excluded_segments';
-    const INCLUDE_PLAYER_IDS= 'include_player_ids';
-    const INCLUDE_IOS_TOKENS= 'include_ios_tokens';
+
+    // Send to Users Based on Filters
+    const FILTERS = 'filters';
+    const FILTERS_FIELD = 'field';
+    const FILTERS_RELATION = 'relation';
+    const FILTERS_VALUE = 'value';
+    const FILTERS_TAG_KEY = 'key';
+    const FILTERS_LAST_SESSION = 'last_session';
+    const FILTERS_FIRST_SESSION = 'first_session';
+    const FILTERS_SESSION_COUNT = 'session_count';
+    const FILTERS_SESSION_TIME = 'session_time';
+    const FILTERS_AMOUNT_SPENT = 'amount_spent';
+    const FILTERS_BOUGHT_SKU = 'bought_sku';
+    const FILTERS_TAG = 'tag';
+    const FILTERS_LANGUAGE = 'language';
+    const FILTERS_APP_VERSION = 'app_version';
+    const FILTERS_LOCATION = 'location';
+    const FILTERS_EMAIL = 'email';
+    const FILTERS_COUNTRY = 'country';
+
+    const TAGS = 'tags'; // deprecated
+    const TAGS_KEY = self::FILTERS_TAG_KEY; // deprecated
+    const TAGS_RELATION = self::FILTERS_RELATION; // deprecated
+    const TAGS_VALUE = self::FILTERS_VALUE; // deprecated
+
+    // Send to Specific Devices
+    const INCLUDE_PLAYER_IDS = 'include_player_ids';
+    const INCLUDE_EXTERNAL_USER_IDS = 'include_external_user_ids';
+    const INCLUDE_EMAIL_TOKENS = 'include_email_tokens';
+    const INCLUDE_IOS_TOKENS = 'include_ios_tokens';
+    const INCLUDE_WP_WNS_URIS = 'include_wp_wns_uris';
+    const INCLUDE_AMAZON_REG_IDS = 'include_amazon_reg_ids';
+    const INCLUDE_CHROME_REG_IDS = 'include_chrome_reg_ids';
+    const INCLUDE_CHROME_WEB_REG_IDS = 'include_chrome_web_reg_ids';
+    const INCLUDE_ANDROID_REG_IDS = 'include_android_reg_ids';
+
+    // App
+    const APP_ID = 'app_id';
+
+    // Idempotency
+    const EXTERNAL_ID = 'external_id';
+
+    // Content & Language
+    const CONTENTS = 'contents';
+    const HEADINGS = 'headings';
+    const SUBTITLE = 'subtitle'; // iOS 10+
+    const TEMPLATE_ID = 'template_id';
+    const CONTENT_AVAILABLE = 'content_available'; // iOS only
+    const MUTABLE_CONTENT = 'mutable_content'; // iOS 10+
+
+    // Email Content
     // ...
+
+    // Attachments
     const DATA = 'data';
     const URL = 'url';
-    //...
-    const TAGS = 'tags';
-    // ...
-    const COLLAPSE_ID = 'collapse_id'; // This is known as apns-collapse-id on iOS 10+ and collapse_key on Android.
-    // ...
-    const SMALL_ICON = 'small_icon';
-    const LARGE_ICON = 'large_icon';
-    const ANDROID_SOUND = 'android_sound';
-    const ANDROID_SOUND_NIL = 'notification';
-    const ANDROID_LED_COLOR = 'android_led_color';
-    const ANDROID_ACCENT_COLOR = 'android_accent_color'; //5.0+5.
-    const ANDROID_VISIBILITY = 'android_visibility';
-    const ANDROID_GROUP = 'android_group';
-    const ANDROID_GROUP_MESSAGE = 'android_group_message';
-    const ANDROID_BACKGROUND_DATA = 'android_background_data';
-    // ...
-    const IOS_SOUND = 'ios_sound';
-    const IOS_SOUND_NIL = 'nil';
-    const IOS_BADGE_TYPE = 'ios_badgeType';
-    const IOS_BADGE_COUNT = 'ios_badgeCount';
-    const IOS_CATEGORY = 'ios_category';
-    const CONTENT_AVAILABLE = 'content_available';
-    const MUTABLE_CONTENT = 'mutable_content';
+    const WEB_URL = 'web_url'; // ALL BROWSERS
+    const APP_URL = 'app_url'; // ALL APPS
     const IOS_ATTACHMENTS = 'ios_attachments'; // iOS 10+
-    // ...
+    const BIG_PICTURE = 'big_picture'; // Android only
+    const ADM_BIG_PICTURE = 'adm_big_picture'; // Amazon only
+    const CHROME_BIG_PICTURE = 'chrome_big_picture'; // Chrome App only
+
+    // Action Buttons
     const BUTTONS = 'buttons';
+    const WEB_BUTTONS = 'web_buttons'; // CHROME 48+
+    const IOS_CATEGORY = 'ios_category'; // iOS
+
+    // Appearance
+    const ANDROID_CHANNEL_ID = 'android_channel_id'; // ANDROID
+    const EXISTING_ANDROID_CHANNEL_ID = 'existing_android_channel_id'; // ANDROID
+    const ANDROID_BACKGROUND_LAYOUT = 'android_background_layout'; // ANDROID
+    const SMALL_ICON = 'small_icon'; // ANDROID
+    const LARGE_ICON = 'large_icon'; // ANDROID
     // ...
+    const IOS_SOUND = 'ios_sound'; // iOS
+    const IOS_SOUND_NIL = 'nil'; // iOS
+    const ANDROID_SOUND = 'android_sound'; // ANDROID
+    const ANDROID_SOUND_NIL = 'notification'; // ANDROID
+    const ANDROID_LED_COLOR = 'android_led_color'; // ANDROID
+    const ANDROID_ACCENT_COLOR = 'android_accent_color'; // ANDROID
+    const ANDROID_VISIBILITY = 'android_visibility'; // ANDROID 5.0+
+    const IOS_BADGE_TYPE = 'ios_badgeType'; // iOS
+    const IOS_BADGE_COUNT = 'ios_badgeCount'; // iOS
+    const COLLAPSE_ID = 'collapse_id'; // This is known as APNS-collapse-id on iOS 10+ and collapse_key on Android.
+    const APNS_ALERT = 'apns_alert'; // iOS 10+
+
+    // Delivery
+    const SEND_AFTER = 'send_after';
     const DELAYED_OPTION = 'delayed_option';
     const DELAYED_OPTION_TIMEZONE = 'timezone';
     const DELAYED_OPTION_LAST_ACTIVE = 'last-active';
     const DELIVERY_TIME_OF_DAY = 'delivery_time_of_day'; // Example: "9:00AM"
-    // ...
-    const TTL = 'ttl';
-    const PRIORITY = 'priority';
-
+    const TTL = 'ttl'; // iOS, ANDROID, CHROME, SAFARI, CHROMEWEB
+    const PRIORITY = 'priority'; // ANDROID, CHROME, CHROMEWEB
     const PRIORITY_LOW = 5;
     const PRIORITY_HIGH = 10;
-    
+    const APNS_PUSH_TYPE_OVERRIDE = 'apns_push_type_override'; // iOS
+
+    // Grouping & Collapsing
+    const ANDROID_GROUP = 'android_group'; // ANDROID
+    const ANDROID_GROUP_MESSAGE = 'android_group_message'; // ANDROID
+    const THREAD_ID = 'thread_id'; // iOS 12+
+    const SUMMARY_ARG = 'summary_arg'; // iOS 12+
+    const SUMMARY_ARG_COUNT = 'summary_arg_count'; // iOS 12+
+
+    // Platform to Deliver To
+    CONST IS_IOS = 'isIos';
+    const IS_ANDROID = 'isAndroid';
+    const IS_ANY_WEB = 'isAnyWeb';
+    const IS_EMAIL = 'isEmail';
+    const IS_CHROME_WEB = 'isChromeWeb';
+    const IS_FIREFOX = 'isFirefox';
+    const IS_SAFARI = 'isSafari';
+    const IS_WP_WNS = 'isWP_WNS';
+    const IS_ADM = 'isAdm';
+    const IS_CHROME = 'isChrome';
+    const CHANNEL_FOR_EXTERNAL_USER_IDS = 'channel_for_external_user_ids';
+
+    // WTF???
+    const ANDROID_BACKGROUND_DATA = 'android_background_data';
+
+    //
+    const GET = 'get';
+    const POST = 'post';
+    const PUT = 'put';
+    const DELETE = 'delete';
+
     const READ_BLOCK_SIZE = 4096;
+    const OPTION_CURL_OPTIONS = 'curl_opts';
 
     // -------
-
-    const OPTION_CURL_OPTIONS = 'curl_opts';
 
     protected $appId;
     protected $restAPIKey;
@@ -156,6 +221,10 @@ class Client implements LoggerAwareInterface
             throw new Exception('Invalid or missing default text of notification (content["en"])');
         }
 
+        if (!isset($data[self::FILTERS])) {
+            $data[self::FILTERS] = [];
+        }
+
         $tags = [];
         
         foreach ((array) $whereTags as $key => $value) {
@@ -166,14 +235,20 @@ class Client implements LoggerAwareInterface
             ];
         }
 
-        if ($tags) {
-            if (isset($data[self::TAGS])) {
-                $data[self::TAGS] = array_merge(array_values($tags), $data[self::TAGS]);
-            } else {
-                $data[self::TAGS] = array_values($tags);
-            }
+        $tags = array_values($tags);
+
+        if (!empty($data[self::TAGS])) {
+            $tags = array_merge($tags, $data[self::TAGS]);
         }
-        
+
+        unset($data[self::TAGS]);
+
+        foreach ($tags as $tag) {
+            $data[self::FILTERS][] = [
+                'field' => 'tag',
+            ] + $tag;
+        }
+
         // You must include which players, segments, or tags you wish to send this notification to
         if (empty($data[self::INCLUDE_PLAYER_IDS]) && empty($data[self::INCLUDED_SEGMENTS]) && empty($data[self::TAGS])) {
             $data[self::INCLUDED_SEGMENTS] = self::SEGMENTS_ALL;
@@ -210,7 +285,8 @@ class Client implements LoggerAwareInterface
         ];
         
         $url = self::BASE_URL . '/players?' . \http_build_query($data);
-        
+
+        /** @noinspection PhpUnnecessaryLocalVariableInspection https://gist.github.com/discordier/ed4b9cba14652e7212f5 */
         $response = $this->request(self::GET, $url);
 
         return $response;

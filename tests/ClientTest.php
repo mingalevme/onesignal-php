@@ -7,24 +7,22 @@ use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 
 class ClientTest extends TestCase
 {
-    /**
-     * @var Client
-     */
+    /** @var Client */
     protected static $client;
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
 
-        $appId = getenv('ONESGINAL_TEST_APP_ID');
-        $apiKey = getenv('ONESGINAL_TEST_API_KEY');
+        $appId = getenv('ONESIGNAL_TEST_APP_ID');
+        $apiKey = getenv('ONESIGNAL_TEST_API_KEY');
 
         if (empty($appId)) {
-            self::fail('ONESGINAL_TEST_APP_ID environment variable required');
+            self::fail('ONESIGNAL_TEST_APP_ID environment variable is required');
         }
 
         if (empty($apiKey)) {
-            self::fail('ONESGINAL_TEST_API_KEY environment variable required');
+            self::fail('ONESIGNAL_TEST_API_KEY environment variable is required');
         }
 
         self::$client = new Client($appId, $apiKey);
@@ -52,7 +50,7 @@ class ClientTest extends TestCase
         $this->assertTrue(count($players) > 0);
     }
 
-    public function testSend()
+    public function testSendWithoutAnyFilters()
     {
         try {
             $result = self::$client->send('(Mingalevme\OneSignal) PHPUnit Test Message, sorry if you are reading me :)', null, null, [
@@ -63,6 +61,60 @@ class ClientTest extends TestCase
             return;
         }
         
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayHasKey('recipients', $result);
+    }
+
+    public function testSendWithAppVersionFilter()
+    {
+        try {
+            $result = self::$client->send('(Mingalevme\OneSignal) PHPUnit Test Message, sorry if you are reading me :)', null, null, [
+                Client::INCLUDED_SEGMENTS => ['All'],
+                Client::TTL => 1,
+                Client::FILTERS => [
+                     [
+                         Client::FILTERS_FIELD => Client::FILTERS_APP_VERSION,
+                         Client::FILTERS_RELATION => '>',
+                         Client::FILTERS_VALUE => '1',
+                    ],
+                ],
+            ]);
+        } catch (AllIncludedPlayersAreNotSubscribed $e) {
+            return;
+        }
+
+        $this->assertArrayHasKey('id', $result);
+        $this->assertArrayHasKey('recipients', $result);
+    }
+
+    public function testSendWithWhereTag()
+    {
+        try {
+            $result = self::$client->send('(Mingalevme\OneSignal) PHPUnit Test Message, sorry if you are reading me :)', null, [
+                'test1' => '1',
+            ], [
+                Client::INCLUDED_SEGMENTS => ['All'],
+                Client::TTL => 1,
+                Client::TAGS => [
+                    [
+                        Client::TAGS_KEY => 'test2',
+                        Client::TAGS_RELATION => '=',
+                        Client::TAGS_VALUE => '2',
+                    ],
+                ],
+                Client::FILTERS => [
+                    [
+                        Client::FILTERS_FIELD => Client::FILTERS_TAG,
+                        Client::FILTERS_TAG_KEY => 'test3',
+                        Client::FILTERS_RELATION => '=',
+                        Client::FILTERS_VALUE => '3',
+                    ],
+                ],
+            ]);
+        } catch (AllIncludedPlayersAreNotSubscribed $e) {
+            return;
+        }
+
         $this->assertArrayHasKey('id', $result);
         $this->assertArrayHasKey('recipients', $result);
     }

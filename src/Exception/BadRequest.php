@@ -6,15 +6,18 @@ use Mingalevme\OneSignal\Exception;
 
 class BadRequest extends Exception
 {
-    /**
-     * @var array
-     */
-    protected $response;
+    /** @var array */
+    protected $responseData;
 
-    public function __construct($response)
+    /**
+     * @param array $responseData
+     */
+    public function __construct($responseData)
     {
-        $this->response = $response;
-        $message = isset($response['errors'][0]) ? $response['errors'][0] : \json_encode($response);
+        $this->responseData = $responseData;
+        $message = isset($responseData['errors'][0])
+            ? $responseData['errors'][0]
+            : \json_encode($responseData);
         parent::__construct($message);
     }
     
@@ -23,6 +26,6 @@ class BadRequest extends Exception
      */
     public function getResponse()
     {
-        return $this->response;
+        return $this->responseData;
     }
 }

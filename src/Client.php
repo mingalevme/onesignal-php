@@ -2,12 +2,12 @@
 
 namespace Mingalevme\OneSignal;
 
-use Psr\Log\LoggerInterface;
-use Psr\Log\LoggerAwareInterface;
-use Mingalevme\OneSignal\Exception;
+use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\BadRequest;
 use Mingalevme\OneSignal\Exception\InvalidPlayerIds;
-use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
+use Mingalevme\OneSignal\Exception\ServiceUnavailable;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 class Client implements LoggerAwareInterface
@@ -493,12 +493,19 @@ class Client implements LoggerAwareInterface
                 curl_setopt($ch, $option, $value);
             }
         }
-        
+
+        /** @var string $responseRaw */
+        $start = microtime(true);
         $responseRaw = curl_exec($ch);
+        $processedIn = round(microtime(true) - $start, 3);
         
         $info = curl_getinfo($ch);
         
         curl_close($ch);
+
+        if ($info['http_code'] === 503) {
+            throw new ServiceUnavailable($responseRaw);
+        }
         
         try {
             $response = \json_decode($responseRaw, true);
@@ -509,7 +516,9 @@ class Client implements LoggerAwareInterface
         if ($response === null) {
             throw new Exception('Unexpected response ' . \json_encode([
                 'http-status-code' => $info['http_code'] ?? '<null>',
+                'processed-in' => $processedIn,
                 'response' => $responseRaw,
+                'info' => $info,
             ]));
         }
         

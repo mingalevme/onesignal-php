@@ -2,7 +2,9 @@
 
 namespace Mingalevme\OneSignal\Exception;
 
-class AllIncludedPlayersAreNotSubscribed extends \Mingalevme\OneSignal\Exception
+use Mingalevme\OneSignal\Exception;
+
+class AllIncludedPlayersAreNotSubscribed extends Exception
 {
     public function __construct()
     {

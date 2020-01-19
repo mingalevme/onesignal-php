@@ -4,7 +4,9 @@ namespace Mingalevme\OneSignal;
 
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\BadRequest;
+use Mingalevme\OneSignal\Exception\BadResponse;
 use Mingalevme\OneSignal\Exception\InvalidPlayerIds;
+use Mingalevme\OneSignal\Exception\ServerError;
 use Mingalevme\OneSignal\Exception\ServiceUnavailable;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
@@ -494,39 +496,44 @@ class Client implements LoggerAwareInterface
             }
         }
 
-        /** @var string $responseRaw */
+        /** @var string $responseBody */
         $start = microtime(true);
-        $responseRaw = curl_exec($ch);
+        $responseBody = curl_exec($ch);
         $processedIn = round(microtime(true) - $start, 3);
-        
-        $info = curl_getinfo($ch);
-        
+
+        $error = curl_error($ch);
+        $info = self::compressArray(curl_getinfo($ch) + [
+                '_processed_in' => $processedIn,
+                '_curl_error' => $error ?: null,
+            ]);
+
         curl_close($ch);
 
+        if ($responseBody === false) {
+            throw new ServerError($error ?: 'Unknown error', 0, null, $info);
+        }
+
         if ($info['http_code'] === 503) {
-            throw new ServiceUnavailable($responseRaw);
+            throw new ServiceUnavailable($responseBody, $info);
+        } elseif ($info['http_code'] > 500) {
+            throw new ServerError(null, $responseBody, $info);
         }
         
         try {
-            $response = \json_decode($responseRaw, true);
+            $responseData = \json_decode($responseBody, true);
         } catch (\Exception $e) {
-            $response = null;
+            $responseData = null;
         }
 
-        if ($response === null) {
-            throw new Exception('Unexpected response ' . \json_encode([
-                'http-status-code' => $info['http_code'] ?? '<null>',
-                'processed-in' => $processedIn,
-                'response' => $responseRaw,
-                'info' => $info,
-            ]));
+        if ($responseData === null) {
+            throw new BadResponse('Response body is invalid', $responseBody, $info['http_code'], $info);
         }
         
         if ($info['http_code'] !== 200) {
-            throw new BadRequest($response);
+            throw new BadRequest($responseData);
         }
         
-        return $response;
+        return $responseData;
     }
     
     public function __destruct()
@@ -561,5 +568,16 @@ class Client implements LoggerAwareInterface
     public function setLogger(LoggerInterface $logger)
     {
         $this->logger = $logger;
+    }
+
+    /**
+     * @param array $arr
+     * @return array
+     */
+    protected static function compressArray($arr)
+    {
+        return array_filter((array) $arr, function ($value) {
+            return boolval($value);
+        });
     }
 }

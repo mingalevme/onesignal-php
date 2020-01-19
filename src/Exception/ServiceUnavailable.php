@@ -2,27 +2,14 @@
 
 namespace Mingalevme\OneSignal\Exception;
 
-use Mingalevme\OneSignal\Exception;
-
-class ServiceUnavailable extends Exception
+class ServiceUnavailable extends ServerError
 {
-    /** @var string */
-    protected $responseBody;
-
     /**
-     * @param $responseBody
+     * @param string|$responseBody
+     * @param array|null $context
      */
-    public function __construct($responseBody)
+    public function __construct($responseBody, $context = null)
     {
-        $this->responseBody = $responseBody;
-        parent::__construct('Service Unavailable');
-    }
-
-    /**
-     * @return string
-     */
-    public function getResponseBody()
-    {
-        return $this->responseBody;
+        parent::__construct('Service Unavailable', $responseBody, 503, $context);
     }
 }

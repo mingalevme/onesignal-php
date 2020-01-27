@@ -503,9 +503,9 @@ class Client implements LoggerAwareInterface
 
         $error = curl_error($ch);
         $info = self::compressArray(curl_getinfo($ch) + [
-                '_processed_in' => $processedIn,
-                '_curl_error' => $error ?: null,
-            ]);
+            '_processed_in' => $processedIn,
+            '_curl_error' => $error ?: null,
+        ]);
 
         curl_close($ch);
 

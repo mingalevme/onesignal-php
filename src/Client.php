@@ -516,7 +516,7 @@ class Client implements LoggerAwareInterface
         if ($info['http_code'] === 503) {
             throw new ServiceUnavailable($responseBody, $info);
         } elseif ($info['http_code'] > 500) {
-            throw new ServerError(null, $responseBody, $info);
+            throw new ServerError(null, $responseBody, $info['http_code'], $info);
         }
         
         try {

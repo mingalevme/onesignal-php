@@ -18,7 +18,7 @@ class Client implements LoggerAwareInterface
 
     // Send to Segments
     const INCLUDED_SEGMENTS = 'included_segments';
-    const SEGMENTS_ALL = 'ALL';
+    const SEGMENTS_ALL = 'All';
     const EXCLUDED_SEGMENTS = 'excluded_segments';
 
     // Send to Users Based on Filters
@@ -155,7 +155,7 @@ class Client implements LoggerAwareInterface
 
     protected $appId;
     protected $restAPIKey;
-    
+
     protected $csvDownloadingTimeout = 30;
 
     protected $toClose = [];
@@ -228,7 +228,7 @@ class Client implements LoggerAwareInterface
         }
 
         $tags = [];
-        
+
         foreach ((array) $whereTags as $key => $value) {
             $tags["{$key}={$value}"] = [
                 'key' => $key,
@@ -255,11 +255,11 @@ class Client implements LoggerAwareInterface
         if (empty($data[self::INCLUDE_PLAYER_IDS]) && empty($data[self::INCLUDED_SEGMENTS]) && empty($data[self::TAGS])) {
             $data[self::INCLUDED_SEGMENTS] = self::SEGMENTS_ALL;
         }
-        
+
         $data[self::APP_ID] = $this->appId;
-        
+
         $url = self::BASE_URL . '/notifications';
-        
+
         $response = $this->request(self::POST, $url, $data);
 
         if (isset($response['errors']['invalid_player_ids'])) {
@@ -267,13 +267,13 @@ class Client implements LoggerAwareInterface
         } elseif (isset($response['recipients']) && $response['recipients'] === 0) {
             throw new AllIncludedPlayersAreNotSubscribed();
         }
-        
+
         return $response;
     }
-    
+
     /**
      * View the details of multiple devices in one of your OneSignal apps
-     * 
+     *
      * @param int $limit
      * @param int $offset
      * @return array
@@ -285,7 +285,7 @@ class Client implements LoggerAwareInterface
             'limit' => $limit,
             'offset' => $offset,
         ];
-        
+
         $url = self::BASE_URL . '/players?' . \http_build_query($data);
 
         /** @noinspection PhpUnnecessaryLocalVariableInspection https://gist.github.com/discordier/ed4b9cba14652e7212f5 */
@@ -293,19 +293,19 @@ class Client implements LoggerAwareInterface
 
         return $response;
     }
-    
+
     /**
      * Returns all players via View devices (/players) method
      * (Danger!) Unavailable for Apps > 100,000 users
-     * 
+     *
      * @return array
      */
     public function getAllPlayersViaPlayers()
     {
         $limit = 299;
-        
+
         $result = [];
-        
+
         while (true) {
             $players = $this->getPlayers($limit + 1, count($result))['players'];
             $result = array_merge($result, $players);
@@ -313,32 +313,32 @@ class Client implements LoggerAwareInterface
                 break;
             }
         }
-        
+
         return $result;
     }
 
     /**
      * Returns a URL to compressed CSV export of all of your current user data
-     * 
+     *
      * @param string $extra Additional fields that you wish to include. Currently supports location, country, and rooted.
      * @return string URL to compressed CSV export of all of your current user data
      */
     public function export($extra = null)
     {
         $url = self::BASE_URL . '/players/csv_export';
-        
+
         $data = [self::APP_ID => $this->appId];
-        
+
         if ($extra) {
             $data['extra_fields'] = (array) $extra;
         }
-        
+
         $response = $this->request(self::POST, $url, $data);
 
         if ((bool) $response === false || isset($response['csv_file_url']) === false) {
             throw new Exception('Unexpected error while requesting an players/csv_export');
         }
-        
+
         return $response['csv_file_url'];
     }
 
@@ -347,24 +347,24 @@ class Client implements LoggerAwareInterface
         $gzCsvUrl = $this->export($extra);
         $fgz = ($tmpdir ? $tmpdir : sys_get_temp_dir()) . "/onesignal-players-{$this->appId}-" . date('Y-m-d-H-i-s') . '.csv.gz';
         $fcsv = str_replace('.csv.gz', '.csv', $fgz);
-        
+
         $this->downloadCsv(is_null($timeout) ? $this->csvDownloadingTimeout : $timeout, $gzCsvUrl, $fgz);
-        
+
         $this->ungzip($fgz, $fcsv);
-        
+
         unlink($fgz);
-        
+
         $csvhandle = fopen($fcsv, 'r');
-        
+
         $this->toClose[$fcsv] = $csvhandle;
         $this->toUnlink[$fcsv] = $fcsv;
-        
+
         $keys = fgetcsv($csvhandle);
-        
+
         if ((bool) $keys === false) {
             throw new Exception("Unexpected error while reading csv-file {$fcsv}");
         }
-        
+
         while (($line = fgetcsv($csvhandle)) !== false) {
             $player = [];
             foreach ($keys as $i => $key) {
@@ -372,17 +372,17 @@ class Client implements LoggerAwareInterface
             }
             yield $player;
         }
-        
+
         fclose($csvhandle);
         unset($this->toClose[$fcsv]);
-        
+
         unlink($fcsv);
         unset($this->toUnlink[$fcsv]);
     }
-    
+
     /**
      * Returns all players via CSV Export (/csv_export) Method
-     * 
+     *
      * @param array $extra Additional fields that you wish to include. Currently supports location, country, and rooted.
      * @param string $tmpdir This dir is used to download remote gz-file and to unpack it to raw csv-file, default is sys_get_temp_dir()
      * @return array
@@ -391,17 +391,17 @@ class Client implements LoggerAwareInterface
     public function getAllPlayersViaExport($extra = null, $tmpdir = null, $timeout = null)
     {
         $players = [];
-        
+
         foreach($this->getNextPlayerViaExport($extra, $tmpdir, $timeout) as $player) {
             $players[] = $player;
         }
-        
+
         return $players;
     }
-    
+
     /**
      * Download a remote resource to a local file
-     * 
+     *
      * @param int $timeout
      * @param string $src Source
      * @param string $dest Destination
@@ -411,55 +411,55 @@ class Client implements LoggerAwareInterface
     protected function downloadCsv($timeout, $src, $dest)
     {
         // sleep(1); // fixes: ErrorException: gzopen(https://...): failed to open stream: HTTP request failed! HTTP/1.1 403 Forbidden
-        
+
         $start = time();
-        
+
         while ($timeout === 0 || time() - $start < $timeout) {
             $fp = fopen($dest, 'w');
-        
+
             $ch = curl_init($src);
 
-            curl_setopt($ch, \CURLOPT_FILE, $fp); 
+            curl_setopt($ch, \CURLOPT_FILE, $fp);
             curl_setopt($ch, \CURLOPT_FOLLOWLOCATION, true);
-            curl_exec($ch); 
+            curl_exec($ch);
 
             $info = curl_getinfo($ch);
-            
+
             curl_close($ch);
 
             fclose($fp);
-            
+
             if ($info['http_code'] === 200) {
                 return true;
             } else {
                 sleep(1);
             }
         }
-        
+
         throw new Exception(file_get_contents($dest), "Maximum execution time of {$timeout}s exceeded while downloading a remote resource {$src}");
     }
-    
+
     protected function ungzip($src, $dest)
     {
         $zp = gzopen($src, 'rb');
-        
+
         $fp = fopen($dest, 'w');
-        
+
         while (gzeof($zp) === false) {
             $data = gzread($zp, self::READ_BLOCK_SIZE);
             fwrite($fp, $data, strlen($data));
         }
 
         gzclose($zp);
-        
+
         fclose($fp);
-        
+
         return true;
     }
 
     /**
      * Makes a request to OneSignal
-     * 
+     *
      * @param string $method
      * @param string $url
      * @param array $data
@@ -470,21 +470,21 @@ class Client implements LoggerAwareInterface
     protected function request($method, $url, $data = null, &$info = null)
     {
         $ch = curl_init();
-        
+
         $headers = [
             "Authorization: Basic {$this->restAPIKey}",
         ];
-        
+
         curl_setopt($ch, \CURLOPT_URL, $url);
         curl_setopt($ch, \CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, \CURLOPT_HEADER, false);
-        
+
         if ($method === self::POST) {
             curl_setopt($ch, \CURLOPT_POST, true);
             $headers[] = "Content-Type: application/json";
             curl_setopt($ch, \CURLOPT_POSTFIELDS, json_encode($data, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
         }
-        
+
         curl_setopt($ch, \CURLOPT_HTTPHEADER, $headers);
 
         curl_setopt($ch, \CURLOPT_CONNECTTIMEOUT, 5);
@@ -518,7 +518,7 @@ class Client implements LoggerAwareInterface
         } elseif ($info['http_code'] > 500) {
             throw new ServerError(null, $responseBody, $info['http_code'], $info);
         }
-        
+
         try {
             $responseData = \json_decode($responseBody, true);
         } catch (\Exception $e) {
@@ -528,14 +528,14 @@ class Client implements LoggerAwareInterface
         if ($responseData === null) {
             throw new BadResponse('Response body is invalid', $responseBody, $info['http_code'], $info);
         }
-        
+
         if ($info['http_code'] !== 200) {
             throw new BadRequest($responseData);
         }
-        
+
         return $responseData;
     }
-    
+
     public function __destruct()
     {
         foreach ($this->toClose as $fname => $handle) {
@@ -547,7 +547,7 @@ class Client implements LoggerAwareInterface
                 }
             }
         }
-        
+
         foreach ($this->toUnlink as $fname) {
             if (is_file($fname)) {
                 try {
@@ -558,7 +558,7 @@ class Client implements LoggerAwareInterface
             }
         }
     }
-    
+
     /**
      * Sets a logger instance on the object.
      *

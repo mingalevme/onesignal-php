@@ -17,8 +17,12 @@ class Client implements LoggerAwareInterface
     const BASE_URL = 'https://onesignal.com/api/v1';
 
     // Send to Segments
-    const INCLUDED_SEGMENTS = 'included_segments';
     const SEGMENTS_ALL = 'All';
+    const SEGMENTS_SUBSCRIBED_USERS = 'Subscribed Users';
+    const SEGMENTS_ACTIVE_USERS = 'Active Users';
+    const SEGMENTS_INACTIVE_USERS = 'Inactive Users';
+    const SEGMENTS_ENGAGED_USERS = 'Engaged Users';
+    const INCLUDED_SEGMENTS = 'included_segments';
     const EXCLUDED_SEGMENTS = 'excluded_segments';
 
     // Send to Users Based on Filters
@@ -253,7 +257,7 @@ class Client implements LoggerAwareInterface
 
         // You must include which players, segments, or tags you wish to send this notification to
         if (empty($data[self::INCLUDE_PLAYER_IDS]) && empty($data[self::INCLUDED_SEGMENTS]) && empty($data[self::TAGS])) {
-            $data[self::INCLUDED_SEGMENTS] = self::SEGMENTS_ALL;
+            $data[self::INCLUDED_SEGMENTS] = self::SEGMENTS_SUBSCRIBED_USERS;
         }
 
         $data[self::APP_ID] = $this->appId;

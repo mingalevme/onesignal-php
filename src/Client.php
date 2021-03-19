@@ -500,18 +500,34 @@ class Client implements LoggerAwareInterface
             }
         }
 
-        /** @var string $responseBody */
+        $this->logger->info('Sending request to OneSignal has been started', [
+            'url' => $url,
+            'method' => $method,
+            'data' => $data,
+        ]);
+
         $start = microtime(true);
+
+        /** @var string $responseBody */
         $responseBody = curl_exec($ch);
+
         $processedIn = round(microtime(true) - $start, 3);
 
         $error = curl_error($ch);
+
         $info = self::compressArray(curl_getinfo($ch) + [
             '_processed_in' => $processedIn,
             '_curl_error' => $error ?: null,
         ]);
 
         curl_close($ch);
+
+        $this->logger->info('Sending request to OneSignal has been finished', [
+            'url' => $url,
+            'method' => $method,
+            'data' => $data,
+            'info' => $info,
+        ]);
 
         if ($responseBody === false) {
             throw new ServerError($error ?: 'Unknown error', 0, null, $info);

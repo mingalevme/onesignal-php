@@ -257,7 +257,7 @@ class Client implements LoggerAwareInterface
 
         // You must include which players, segments, or tags you wish to send this notification to
         if (empty($data[self::INCLUDE_PLAYER_IDS]) && empty($data[self::INCLUDED_SEGMENTS]) && empty($data[self::TAGS])) {
-            $data[self::INCLUDED_SEGMENTS] = self::SEGMENTS_SUBSCRIBED_USERS;
+            $data[self::INCLUDED_SEGMENTS] = [self::SEGMENTS_SUBSCRIBED_USERS];
         }
 
         $data[self::APP_ID] = $this->appId;

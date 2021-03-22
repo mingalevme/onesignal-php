@@ -2,6 +2,7 @@
 
 namespace Mingalevme\OneSignal;
 
+use InvalidArgumentException;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\BadRequest;
 use Mingalevme\OneSignal\Exception\BadResponse;
@@ -155,10 +156,18 @@ class Client implements LoggerAwareInterface
     const READ_BLOCK_SIZE = 4096;
     const OPTION_CURL_OPTIONS = 'curl_opts';
 
+    const OPTION_DEFAULT_SEGMENT = 'default_segment';
+
     // -------
 
+    /** @var string */
     protected $appId;
+
+    /** @var string  */
     protected $restAPIKey;
+
+    /** @var string */
+    protected $defaultSegment = self::SEGMENTS_SUBSCRIBED_USERS;
 
     protected $csvDownloadingTimeout = 30;
 
@@ -182,13 +191,25 @@ class Client implements LoggerAwareInterface
         $this->appId = $appId;
         $this->restAPIKey = $restAPIKey;
         $this->logger = new NullLogger();
-        $this->options = (array) $options;
 
-        if (array_key_exists(self::OPTION_CURL_OPTIONS, $this->options)) {
-            if (!is_array($this->options[self::OPTION_CURL_OPTIONS])) {
-                throw new \RuntimeException('Curl options must be an array');
+        $options = (array) $options;
+
+        if (array_key_exists(self::OPTION_CURL_OPTIONS, $options)) {
+            if (!is_array($options[self::OPTION_CURL_OPTIONS])) {
+                throw new InvalidArgumentException('Curl options must be an array');
             }
         }
+
+        if (array_key_exists(self::OPTION_DEFAULT_SEGMENT, $options)) {
+            if (!is_string($options[self::OPTION_DEFAULT_SEGMENT]) || trim($options[self::OPTION_DEFAULT_SEGMENT]) === '') {
+                throw new InvalidArgumentException('Invalid default segment option value');
+            }
+            $this->defaultSegment = trim($options[self::OPTION_DEFAULT_SEGMENT]);
+            unset($options[self::OPTION_DEFAULT_SEGMENT]);
+        }
+
+
+        $this->options = $options;
     }
 
     /**
@@ -256,8 +277,8 @@ class Client implements LoggerAwareInterface
         }
 
         // You must include which players, segments, or tags you wish to send this notification to
-        if (empty($data[self::INCLUDE_PLAYER_IDS]) && empty($data[self::INCLUDED_SEGMENTS]) && empty($data[self::TAGS])) {
-            $data[self::INCLUDED_SEGMENTS] = [self::SEGMENTS_SUBSCRIBED_USERS];
+        if (empty($data[self::INCLUDE_PLAYER_IDS]) && empty($data[self::INCLUDED_SEGMENTS]) && empty($data[self::FILTERS])) {
+            $data[self::INCLUDED_SEGMENTS] = [$this->defaultSegment];
         }
 
         $data[self::APP_ID] = $this->appId;

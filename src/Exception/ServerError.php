@@ -9,7 +9,7 @@ class ServerError extends Exception
     /** @var string|null */
     protected $responseBody;
 
-    public function __construct($status = 'Server Error', $responseBody = null, $code = 500, $context = null)
+    public function __construct(?string $status = 'Server Error', $responseBody = null, $code = 500, $context = null)
     {
         $status = $status ?: 'Server Error';
         parent::__construct($status, $code, null, $context);

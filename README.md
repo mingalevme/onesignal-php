@@ -29,3 +29,24 @@ $OneSignal->send('title', [
     // ...
 ]);
 ```
+
+# Testing (OSX)
+
+## Install PHP 7.4+
+
+```shell
+brew install php@7.4
+```
+
+## Composer
+
+```shell
+brew install composer
+/usr/local/opt/php@7.4/bin/php /usr/local/bin/composer install
+```
+
+## phpunit
+
+```shell
+/usr/local/opt/php@7.4/bin/php vendor/bin/phpunit
+```

@@ -2,16 +2,14 @@
 
 namespace Mingalevme\OneSignal\Exception;
 
-class InvalidPlayerIds extends \Mingalevme\OneSignal\Exception
-{
-    /**
-     * @var array
-     */
-    protected $ids;
+use Mingalevme\OneSignal\Exception;
 
-    /**
-     * @param array $ids
-     */
+class InvalidPlayerIds extends Exception
+{
+    /** @var string[] */
+    protected array $ids;
+
+    /** @param string[] $ids */
     public function __construct($ids)
     {
         $this->ids = $ids;
@@ -19,9 +17,9 @@ class InvalidPlayerIds extends \Mingalevme\OneSignal\Exception
     }
     
     /**
-     * @return array
+     * @return string[]
      */
-    public function getIds()
+    public function getIds(): array
     {
         return $this->ids;
     }

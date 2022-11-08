@@ -1,3 +1,6 @@
+.psalm
+.phpstan
+
 # Created by https://www.toptal.com/developers/gitignore/api/composer,phpunit,dotenv,phpstorm,phpstorm+iml,osx
 # Edit at https://www.toptal.com/developers/gitignore?templates=composer,phpunit,dotenv,phpstorm,phpstorm+iml,osx
 

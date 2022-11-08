@@ -26,7 +26,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     {
         parent::setUp();
         $dotenv = Dotenv::createUnsafeImmutable(__DIR__ . '/../');
-        $dotenv->load();
+        $dotenv->safeLoad();
     }
 
     protected function getStrEnv(string $name, ?string $default = null): ?string

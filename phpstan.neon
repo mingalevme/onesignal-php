@@ -1,0 +1,7 @@
+parameters:
+    tmpDir: .phpstan
+    level: max
+    paths:
+        - src
+        - tests
+

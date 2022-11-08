@@ -1,0 +1,40 @@
+name: Quality
+
+on: [ push, pull_request ]
+
+jobs:
+  quality:
+    strategy:
+      matrix:
+        operating-system: [ ubuntu-latest ]
+        php-versions: [ '7.4', '8.0', '8.1', '8.2', 'latest' ]
+    runs-on: ${{ matrix.operating-system }}
+    name: PHP ${{ matrix.php-versions }} on ${{ matrix.operating-system }}
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2 # https://github.com/shivammathur/setup-php
+        with:
+          php-version: ${{ matrix.php-versions }}
+          # Shared extensions can be disabled by prefixing them with a :.
+          # All extensions depending on the specified extension will also be disabled.
+          extensions: mbstring, intl, :opcache
+          coverage: xdebug
+      - uses: actions/checkout@v2
+      - name: Validate composer.json
+        run: composer validate --strict
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+      - name: PHPUnit
+        run: php vendor/bin/phpunit --coverage-clover coverage.xml
+      - name: Psalm
+        run: php vendor/bin/psalm
+      - name: PHPStan
+        run: php vendor/bin/phpstan --xdebug analyse
+      - name: Code Sniffer
+        run: vendor/bin/phpcs
+      - name: Codecov
+        uses: codecov/codecov-action@v1
+        env:
+          CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
+        with:
+          files: ./coverage.xml

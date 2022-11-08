@@ -3,9 +3,10 @@
 namespace Mingalevme\Tests\OneSignal\Suites\Integration;
 
 use Mingalevme\OneSignal\Client;
-use Mingalevme\OneSignal\ClientInterface;
+use Mingalevme\OneSignal\CreateNotificationInterface;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
-use Mingalevme\OneSignal\Exception\BadRequest;
+use Mingalevme\OneSignal\Exception\ClientException;
+use Mingalevme\OneSignal\Exception\OneSignalException;
 use Mingalevme\Tests\OneSignal\TestCase;
 
 class ClientTest extends TestCase
@@ -28,8 +29,8 @@ class ClientTest extends TestCase
             $client->setDefaultSegment($segment);
         }
         $result = $client->createNotification('test');
-        self::assertNotEmpty($result['id']);
-        self::assertGreaterThan(1, $result['recipients']);
+        self::assertNotEmpty($result->getId());
+        self::assertGreaterThan(1, $result->getTotalNumberOfRecipients());
     }
 
     public function testSendingToActivePlayer(): void
@@ -39,25 +40,28 @@ class ClientTest extends TestCase
             self::markTestSkipped('Env var ONE_SIGNAL_TEST_PLAYER_ID is not set');
         }
         $result = $this->getClient()->createNotification('test', null, null, [
-            ClientInterface::INCLUDE_PLAYER_IDS => [
+            CreateNotificationInterface::INCLUDE_PLAYER_IDS => [
                 $playerId,
             ],
         ]);
-        self::assertNotEmpty($result['id']);
-        self::assertSame(1, $result['recipients']);
+        self::assertNotEmpty($result->getId());
+        self::assertSame(1, $result->getTotalNumberOfRecipients());
     }
 
-    public function testIncorrectPlayerIdFormat(): void
+    public function testInvalidPlayerIdFormat(): void
     {
         try {
             $this->getClient()->createNotification('test', null, null, [
-                ClientInterface::INCLUDE_PLAYER_IDS => [
+                CreateNotificationInterface::INCLUDE_PLAYER_IDS => [
                     'invalid-player-id',
                 ],
             ]);
             self::fail('Exception has not been thrown');
-        } catch (BadRequest $e) {
-            self::assertTrue(true);
+        } catch (ClientException $e) {
+            self::assertSame(
+                'Incorrect player_id format in include_player_ids (not a valid UUID): invalid-player-id',
+                $e->getMessage()
+            );
         }
     }
 
@@ -70,6 +74,20 @@ class ClientTest extends TestCase
             self::fail('Exception has not been thrown');
         } catch (AllIncludedPlayersAreNotSubscribed $e) {
             self::assertTrue(true);
+        }
+    }
+
+    public function testInvalidCredentials(): void
+    {
+        $client = $this->getClientFactory()->create(
+            '67415017-24e2-4a6c-afc9-a14e7958c4db',
+            'Njk4YTE1YWUtZjhlMi00Yzk2LWExZjAtNTg5ZDhiZGRmZGUx'
+        );
+        try {
+            $client->createNotification('test');
+            self::fail('Exception has not been thrown');
+        } catch (OneSignalException $e) {
+            self::assertInstanceOf(ClientException::class, $e);
         }
     }
 }

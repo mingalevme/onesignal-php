@@ -13,8 +13,11 @@
          verbose="true">
     <php />
     <testsuites>
-        <testsuite name="base">
-            <directory>./</directory>
+        <testsuite name="Feature">
+            <directory>./tests/Suites/Feature</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory>./tests/Suites/Integration</directory>
         </testsuite>
     </testsuites>
 </phpunit>

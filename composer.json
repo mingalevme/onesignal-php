@@ -1,6 +1,7 @@
 {
-    "name": "mingalevme/onesignal-simple-php-client",
+    "name": "mingalevme/onesignal",
     "description": "Simple OneSignal PHP Client",
+    "homepage": "https://github.com/mingalevme/onesignal-php",
     "license": "MIT",
     "keywords": ["onesignal"],
     "authors": [

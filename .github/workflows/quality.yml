@@ -1,11 +1,6 @@
 name: Quality
 
 on: [ push, pull_request ]
-#on:
-#  push:
-#    branches: [ "master" ]
-#  pull_request:
-#    branches: [ "master" ]
 
 permissions:
   contents: read
@@ -32,6 +27,8 @@ jobs:
         run: composer validate --strict
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
+      - name: Security audit
+        run: composer audit
       - name: PHPUnit
         run: php vendor/bin/phpunit --coverage-clover coverage.xml
         env:
@@ -42,10 +39,13 @@ jobs:
       - name: Psalm
         run: php vendor/bin/psalm
       - name: PHPStan
-        run: php vendor/bin/phpstan --xdebug analyse
+        run: php vendor/bin/phpstan analyse
       - name: Code Sniffer
         run: vendor/bin/phpcs
       - name: Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v3 # https://github.com/marketplace/actions/codecov
         with:
           files: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)

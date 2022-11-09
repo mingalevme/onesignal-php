@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Mingalevme\Tests\OneSignal\Suites\Feature;
 
 use Mingalevme\OneSignal\Client;
-use Mingalevme\OneSignal\CreateNotificationInterface;
+use Mingalevme\OneSignal\CreateNotificationOptions;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\OneSignalException;
 use Mingalevme\Tests\OneSignal\Helpers\StaticResponsePsrHttpClient;
-use Psr\Http\Client\ClientInterface as PsrHttpClient;
 use RuntimeException;
 
 /**
@@ -42,24 +41,24 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         ], [
             'tag1' => 'value1',
         ], [
-            CreateNotificationInterface::FILTERS => [
+            CreateNotificationOptions::FILTERS => [
                 [
-                    CreateNotificationInterface::FILTERS_FIELD => CreateNotificationInterface::FILTERS_FIELD_TAG,
-                    CreateNotificationInterface::FILTERS_TAG_KEY => 'tag2',
-                    CreateNotificationInterface::FILTERS_RELATION => '>',
-                    CreateNotificationInterface::FILTERS_VALUE => '1',
+                    CreateNotificationOptions::FILTERS_FIELD => CreateNotificationOptions::FILTERS_FIELD_TAG,
+                    CreateNotificationOptions::FILTERS_TAG_KEY => 'tag2',
+                    CreateNotificationOptions::FILTERS_RELATION => '>',
+                    CreateNotificationOptions::FILTERS_VALUE => '1',
                 ],
             ],
-            CreateNotificationInterface::TAGS => [
+            CreateNotificationOptions::TAGS => [
                 [
-                    CreateNotificationInterface::FILTERS_TAG_KEY => 'tag3',
-                    CreateNotificationInterface::FILTERS_RELATION => '>=',
-                    CreateNotificationInterface::FILTERS_VALUE => '1',
+                    CreateNotificationOptions::FILTERS_TAG_KEY => 'tag3',
+                    CreateNotificationOptions::FILTERS_RELATION => '>=',
+                    CreateNotificationOptions::FILTERS_VALUE => '1',
                 ],
             ],
         ]);
         //
-        self::assertSame('foo-bar', $result->getId());
+        self::assertSame('foo-bar', $result->getNotificationId());
         self::assertSame(1, $result->getTotalNumberOfRecipients());
         //
         self::assertCount(1, $this->getPsrHttpClient()->getRequests());

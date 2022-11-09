@@ -3,7 +3,7 @@
 namespace Mingalevme\Tests\OneSignal\Suites\Integration;
 
 use Mingalevme\OneSignal\Client;
-use Mingalevme\OneSignal\CreateNotificationInterface;
+use Mingalevme\OneSignal\CreateNotificationOptions;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\ClientException;
 use Mingalevme\OneSignal\Exception\OneSignalException;
@@ -29,7 +29,7 @@ class ClientTest extends TestCase
             $client->setDefaultSegment($segment);
         }
         $result = $client->createNotification('test');
-        self::assertNotEmpty($result->getId());
+        self::assertNotEmpty($result->getNotificationId());
         self::assertGreaterThan(1, $result->getTotalNumberOfRecipients());
     }
 
@@ -40,11 +40,11 @@ class ClientTest extends TestCase
             self::markTestSkipped('Env var ONE_SIGNAL_TEST_PLAYER_ID is not set');
         }
         $result = $this->getClient()->createNotification('test', null, null, [
-            CreateNotificationInterface::INCLUDE_PLAYER_IDS => [
+            CreateNotificationOptions::INCLUDE_PLAYER_IDS => [
                 $playerId,
             ],
         ]);
-        self::assertNotEmpty($result->getId());
+        self::assertNotEmpty($result->getNotificationId());
         self::assertSame(1, $result->getTotalNumberOfRecipients());
     }
 
@@ -52,7 +52,7 @@ class ClientTest extends TestCase
     {
         try {
             $this->getClient()->createNotification('test', null, null, [
-                CreateNotificationInterface::INCLUDE_PLAYER_IDS => [
+                CreateNotificationOptions::INCLUDE_PLAYER_IDS => [
                     'invalid-player-id',
                 ],
             ]);

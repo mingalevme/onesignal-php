@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Mingalevme\OneSignal;
 
 use InvalidArgumentException;
+use Mingalevme\OneSignal\CreateNotificationOptions as CNO;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\ClientException;
 use Mingalevme\OneSignal\Exception\NetworkException;
@@ -36,8 +37,9 @@ class Client implements ClientInterface
 {
     protected const BASE_URL = 'https://onesignal.com/api/v1';
 
-    protected string $appId;
+    protected const APP_ID = 'app_id';
 
+    protected string $appId;
     protected string $restAPIKey;
 
     protected PsrHttpClient $psrHttpClient;
@@ -46,7 +48,7 @@ class Client implements ClientInterface
     protected LoggerInterface $logger;
 
     /** @var non-empty-string */
-    protected string $defaultSegment = self::SEGMENTS_SUBSCRIBED_USERS;
+    protected string $defaultSegment = CNO::SEGMENTS_SUBSCRIBED_USERS;
 
     /** @var non-empty-string */
     protected string $baseUrl = self::BASE_URL;
@@ -89,6 +91,7 @@ class Client implements ClientInterface
     /**
      * @param non-empty-string $baseUrl
      * @return static
+     * @noinspection PhpUnused
      */
     public function setBaseUrl(string $baseUrl): self
     {
@@ -114,11 +117,11 @@ class Client implements ClientInterface
         }
 
         if (count($content) > 0) {
-            $data[self::CONTENTS] = $content;
+            $data[CNO::CONTENTS] = $content;
         }
 
         if ($payload) {
-            $data[self::DATA] = $payload;
+            $data[CNO::DATA] = $payload;
         }
         if ($extra) {
             $data = array_merge($data, $extra);
@@ -132,24 +135,24 @@ class Client implements ClientInterface
          * }|array<string, mixed> $data
          */
 
-        if (empty($data[self::CONTENTS]) && empty($data[self::CONTENT_AVAILABLE]) && empty($data[self::TEMPLATE_ID])) {
+        if (empty($data[CNO::CONTENTS]) && empty($data[CNO::CONTENT_AVAILABLE]) && empty($data[CNO::TEMPLATE_ID])) {
             throw new InvalidArgumentException(
                 'Title is required unless content_available=true or template_id is set'
             );
         }
 
         // English must be included in the hash (https://documentation.onesignal.com/reference/push-channel-properties)
-        if (!empty($data[self::CONTENTS])) {
+        if (!empty($data[CNO::CONTENTS])) {
             /** @var array<string, mixed> $contents */
-            $contents = $data[self::CONTENTS];
+            $contents = $data[CNO::CONTENTS];
             /** @psalm-suppress MixedArgument */
             if (empty($contents['en']) || !is_string($contents['en']) || !trim($contents['en'])) {
                 throw new InvalidArgumentException('Invalid or missing default text of notification (content["en"])');
             }
         }
 
-        if (empty($data[self::FILTERS])) {
-            $data[self::FILTERS] = [];
+        if (empty($data[CNO::FILTERS])) {
+            $data[CNO::FILTERS] = [];
         }
 
         /** @var array<string, array{key: string, relation: string, value: string}> $tags */
@@ -157,24 +160,24 @@ class Client implements ClientInterface
 
         foreach ((array)$whereTags as $key => $value) {
             $tags["$key=$value"] = [
-                self::FILTERS_TAG_KEY => $key,
-                self::FILTERS_RELATION => '=',
-                self::FILTERS_VALUE => $value,
+                CNO::FILTERS_TAG_KEY => $key,
+                CNO::FILTERS_RELATION => '=',
+                CNO::FILTERS_VALUE => $value,
             ];
         }
 
         /** @var array{key: string, relation: string, value: string}[] $tags */
         $tags = array_values($tags);
 
-        if ($data[self::TAGS] ?? null) {
+        if ($data[CNO::TAGS] ?? null) {
             /**
              * @psalm-suppress MixedArgument
              * @phpstan-ignore-next-line
              */
-            $tags = array_merge($tags, $data[self::TAGS]);
+            $tags = array_merge($tags, $data[CNO::TAGS]);
         }
 
-        unset($data[self::TAGS]);
+        unset($data[CNO::TAGS]);
 
         /** @var array{key: string, relation: string, value: string} $tag */
         foreach ($tags as $tag) {
@@ -183,23 +186,23 @@ class Client implements ClientInterface
              * @psalm-suppress MixedArrayAssignment
              * @phpstan-ignore-next-line
              */
-            $data[self::FILTERS][] = [
-                    self::FILTERS_FIELD => self::FILTERS_FIELD_TAG,
+            $data[CNO::FILTERS][] = [
+                    CNO::FILTERS_FIELD => CNO::FILTERS_FIELD_TAG,
                 ] + $tag;
         }
 
         // You must include which players, segments, or tags you wish to send this notification to
         if (
-            empty($data[self::INCLUDE_PLAYER_IDS])
-            && empty($data[self::INCLUDED_SEGMENTS])
-            && empty($data[self::FILTERS])
+            empty($data[CNO::INCLUDE_PLAYER_IDS])
+            && empty($data[CNO::INCLUDED_SEGMENTS])
+            && empty($data[CNO::FILTERS])
         ) {
-            $data[self::INCLUDED_SEGMENTS] = [$this->defaultSegment];
+            $data[CNO::INCLUDED_SEGMENTS] = [$this->defaultSegment];
         }
 
         $data[self::APP_ID] = $this->appId;
 
-        $url = self::BASE_URL . '/notifications';
+        $url = "$this->baseUrl/notifications";
 
         $response = $this->makePostRequest($url, $data, $request);
 
@@ -232,6 +235,7 @@ class Client implements ClientInterface
      * @param array<string|int, mixed> $payload
      * @param RequestInterface|null $request
      * @return ResponseInterface
+     * @noinspection PhpUnused
      */
     protected function makeGetRequest(
         string $url,

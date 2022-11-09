@@ -1,7 +1,18 @@
 # Simple OneSignal PHP Client
 
-![quality](https://github.com/mingalevme/onesignal/actions/workflows/quality.yml/badge.svg)
-[![codecov](https://codecov.io/gh/mingalevme/onesignal/branch/feature/v2/graph/badge.svg?token=JelfrDfOkJ)](https://codecov.io/gh/mingalevme/onesignal)
+[![quality](https://github.com/mingalevme/onesignal-php/actions/workflows/quality.yml/badge.svg)](https://github.com/mingalevme/onesignal-php/actions)
+[![codecov](https://codecov.io/gh/mingalevme/onesignal-php/branch/feature/v2/graph/badge.svg?token=JelfrDfOkJ)](https://codecov.io/gh/mingalevme/onesignal)
+[![version](https://img.shields.io/packagist/v/mingalevme/onesignal)](https://packagist.org/packages/mingalevme/onesignal)
+[![license](https://img.shields.io/packagist/l/mingalevme/onesignal)](https://packagist.org/packages/mingalevme/onesignal)
+
+Almost zero dependencies - only some PSRs and JSON-extension:
+- PSR-3: Logger Interface
+- PSR-17: HTTP Factories
+- PSR-18: HTTP Client
+- JSON-extension (As of PHP 8.0.0, the JSON extension is a core PHP extension, so it is always enabled)
+
+> **NOTE**: In case of zero recipients `createNotification`-method throws `AllIncludedPlayersAreNotSubscribed`-exception.
+> It's because OneSignal does not create a notification object in that case.
 
 ## Examples
 
@@ -17,7 +28,6 @@ declare(strict_types=1);
 use Mingalevme\OneSignal\ClientFactory;
 use Mingalevme\OneSignal\ClientFactoryInterface;
 use Mingalevme\OneSignal\ClientInterface;
-use Mingalevme\OneSignal\CreateNotificationOptions;
 
 class AppServiceProvider
 {
@@ -46,8 +56,6 @@ Some application logic
 
 declare(strict_types=1);
 
-use Mingalevme\OneSignal\ClientFactory;
-use Mingalevme\OneSignal\ClientFactoryInterface;
 use Mingalevme\OneSignal\ClientInterface;
 use Mingalevme\OneSignal\CreateNotificationOptions;
 

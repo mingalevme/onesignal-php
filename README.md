@@ -1,5 +1,8 @@
 # Simple OneSignal PHP Client
 
+![quality](https://github.com/mingalevme/onesignal/actions/workflows/quality.yml/badge.svg)
+[![codecov](https://codecov.io/gh/mingalevme/onesignal/branch/feature/v2/graph/badge.svg?token=JelfrDfOkJ)](https://codecov.io/gh/mingalevme/onesignal)
+
 ## Examples
 
 ### Example (DI Container)

@@ -160,11 +160,11 @@ brew install composer
 ### PHPStan
 
 ```shell
-/usr/local/opt/php@7.4/bin/php vendor/bin/phpstan --xdebug analyse
+/usr/local/opt/php@7.4/bin/php vendor/bin/phpstan analyse
 ```
 
 ### PHP_CodeSniffer
 
 ```shell
-/usr/local/opt/php@7.4/bin/php vendor/bin/phpstan --xdebug analyse
+/usr/local/opt/php@7.4/bin/php vendor/bin/phpcs
 ```

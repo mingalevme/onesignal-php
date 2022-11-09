@@ -46,8 +46,6 @@ jobs:
       - name: Code Sniffer
         run: vendor/bin/phpcs
       - name: Codecov
-        uses: codecov/codecov-action@v1
-        env:
-          CODECOV_TOKEN: "${{ secrets.CODECOV_TOKEN }}"
+        uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml

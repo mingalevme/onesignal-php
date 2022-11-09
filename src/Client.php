@@ -9,13 +9,16 @@ use Mingalevme\OneSignal\CreateNotificationOptions as CNO;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\ClientException;
 use Mingalevme\OneSignal\Exception\NetworkException;
+use Mingalevme\OneSignal\Exception\RequestException;
 use Mingalevme\OneSignal\Exception\ServerException;
 use Mingalevme\OneSignal\Exception\ServiceUnavailableException;
+use Mingalevme\OneSignal\Exception\TransferException;
 use Mingalevme\OneSignal\Exception\UnexpectedResponseFormatException;
 use Mingalevme\Tests\OneSignal\Suites\Integration\ClientTest;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface as PsrHttpClient;
 use Psr\Http\Client\NetworkExceptionInterface;
+use Psr\Http\Client\RequestExceptionInterface;
 use Psr\Http\Message\RequestFactoryInterface as PsrRequestFactory;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -52,6 +55,7 @@ class Client implements ClientInterface
 
     /** @var non-empty-string */
     protected string $baseUrl = self::BASE_URL;
+    private ?bool $debug;
 
     /**
      *
@@ -61,6 +65,7 @@ class Client implements ClientInterface
      * @param PsrRequestFactory $psrRequestFactory
      * @param PsrStreamFactory $psrStreamFactory
      * @param LoggerInterface|null $logger
+     * @param bool|null $debug
      */
     public function __construct(
         string $appId,
@@ -68,7 +73,8 @@ class Client implements ClientInterface
         PsrHttpClient $psrHttpClient,
         PsrRequestFactory $psrRequestFactory,
         PsrStreamFactory $psrStreamFactory,
-        ?LoggerInterface $logger
+        ?LoggerInterface $logger,
+        ?bool $debug = false
     ) {
         $this->appId = $appId;
         $this->restAPIKey = $restAPIKey;
@@ -76,6 +82,7 @@ class Client implements ClientInterface
         $this->psrRequestFactory = $psrRequestFactory;
         $this->psrStreamFactory = $psrStreamFactory;
         $this->logger = $logger ?: new NullLogger();
+        $this->debug = $debug;
     }
 
     /**
@@ -96,6 +103,16 @@ class Client implements ClientInterface
     public function setBaseUrl(string $baseUrl): self
     {
         $this->baseUrl = $baseUrl;
+        return $this;
+    }
+
+    /**
+     * @param bool|null $debug
+     * @return $this
+     */
+    public function setDebug(?bool $debug): self
+    {
+        $this->debug = $debug;
         return $this;
     }
 
@@ -236,6 +253,7 @@ class Client implements ClientInterface
      * @param RequestInterface|null $request
      * @return ResponseInterface
      * @noinspection PhpUnused
+     * @codeCoverageIgnore
      */
     protected function makeGetRequest(
         string $url,
@@ -270,6 +288,7 @@ class Client implements ClientInterface
         if ($payload) {
             $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             if ($json === false) {
+                /** @codeCoverageIgnore */
                 throw new RuntimeException('Error while encoding payload to json');
             }
             $body = $this->psrStreamFactory->createStream($json);
@@ -289,6 +308,11 @@ class Client implements ClientInterface
             'url' => $request->getUri()->__toString(),
         ];
 
+        if ($this->debug && $request->getBody()->isSeekable()) {
+            $context['body'] = $request->getBody()->getContents();
+            $request->getBody()->rewind();
+        }
+
         $request = $request->withHeader('Authorization', "Basic $this->restAPIKey");
 
         $this->logger->debug('Sending request to OneSignal has been started', $context);
@@ -301,7 +325,10 @@ class Client implements ClientInterface
             if ($e instanceof NetworkExceptionInterface) {
                 throw new NetworkException($request, $message, null, $e);
             }
-            throw new RuntimeException($message, 0, $e);
+            if ($e instanceof RequestExceptionInterface) {
+                throw new RequestException($request, null, $message, 0, $e);
+            }
+            throw new TransferException($request, null, $message, 0, $e);
         }
 
         $statusCode = $response->getStatusCode();
@@ -363,6 +390,9 @@ class Client implements ClientInterface
         return $responseData;
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
     protected function strContains(string $haystack, string $needle): bool
     {
         return strpos($haystack, $needle) !== false;

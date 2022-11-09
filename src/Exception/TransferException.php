@@ -10,7 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 use Throwable;
 
-abstract class TransferException extends RuntimeException implements OneSignalException, ClientExceptionInterface
+class TransferException extends RuntimeException implements OneSignalException, ClientExceptionInterface
 {
     protected RequestInterface $request;
     protected ?ResponseInterface $response = null;

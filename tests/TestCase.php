@@ -85,10 +85,10 @@ class TestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param mixed $data
      * @return string
      */
-    protected function jsonEncode(array $data): string
+    protected function jsonEncode($data): string
     {
         $value = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($value === false) {

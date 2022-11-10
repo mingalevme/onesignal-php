@@ -1,4 +1,5 @@
 tests/ export-ignore
+php-7.4-dev.Dockerfile export-ignore
 phpcs.xml export-ignore
 phpstan.neon export-ignore
 phpunit.xml export-ignore

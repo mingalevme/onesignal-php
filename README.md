@@ -27,6 +27,7 @@ declare(strict_types=1);
 use Mingalevme\OneSignal\ClientFactory;
 use Mingalevme\OneSignal\ClientFactoryInterface;
 use Mingalevme\OneSignal\ClientInterface;
+use Mingalevme\OneSignal\CreateClientOptions;
 
 class AppServiceProvider
 {
@@ -41,7 +42,8 @@ class AppServiceProvider
         $container->set(ClientFactoryInterface::class, ClientFactory::class);
         $container->set(
             ClientInterface::class,
-            fn() => $container->get(ClientFactoryInterface::class)->create($appId, $restAPIKey)
+            fn() => $container->get(ClientFactoryInterface::class)
+                ->create(CreateClientOptions::new($appId, $restAPIKey))
         );
         // ...
     }
@@ -96,17 +98,16 @@ declare(strict_types=1);
 
 use GuzzleHttp\Psr7\HttpFactory;
 use Mingalevme\OneSignal\Client;
+use Mingalevme\OneSignal\CreateClientOptions;
 use Mingalevme\OneSignal\CreateNotificationOptions;
-use Psr\Log\NullLogger;
 
 $appId = 'my-app-id';
 $restApiKey = 'my-rest-api-key';
 
 $psrHttpClient = new \GuzzleHttp\Client();
 $psr7Factory = new HttpFactory();
-$logger = new NullLogger();
 
-$client = new Client($appId, $restApiKey, $psrHttpClient, $psr7Factory, $psr7Factory, $logger);
+$client = new Client(CreateClientOptions::new($appId, $restAPIKey), $psrHttpClient, $psr7Factory, $psr7Factory);
 $result = $client->createNotification('text', [
     'type' => 'my-notification-type',
     'data' => 'some-extra-data',

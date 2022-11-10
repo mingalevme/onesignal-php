@@ -37,11 +37,11 @@ jobs:
           ONE_SIGNAL_TEST_DEFAULT_SEGMENT: "${{ secrets.ONE_SIGNAL_TEST_DEFAULT_SEGMENT }}"
           ONE_SIGNAL_TEST_PLAYER_ID: "${{ secrets.ONE_SIGNAL_TEST_PLAYER_ID }}"
       - name: Psalm
-        run: php vendor/bin/psalm
+        run: php -dxdebug.mode=off vendor/bin/psalm
       - name: PHPStan
-        run: php vendor/bin/phpstan analyse
+        run: php -dxdebug.mode=off vendor/bin/phpstan analyse
       - name: Code Sniffer
-        run: vendor/bin/phpcs
+        run: php -dxdebug.mode=off vendor/bin/phpcs
       - name: Codecov
         uses: codecov/codecov-action@v3 # https://github.com/marketplace/actions/codecov
         with:

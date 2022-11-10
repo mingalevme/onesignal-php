@@ -46,8 +46,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
         return new ClientFactory(
             $this->getPsrHttpClient(),
             $this->getPsrRequestFactory(),
-            $this->getPsrStreamFactory(),
-            $this->getLogger()
+            $this->getPsrStreamFactory()
         );
     }
 
@@ -77,11 +76,6 @@ class TestCase extends \PHPUnit\Framework\TestCase
             $this->guzzleHttpFactory = new HttpFactory();
         }
         return $this->guzzleHttpFactory;
-    }
-
-    protected function getLogger(): LoggerInterface
-    {
-        return new NullLogger();
     }
 
     /**

@@ -3,14 +3,26 @@
 namespace Mingalevme\Tests\OneSignal\Suites\Integration;
 
 use Mingalevme\OneSignal\Client;
+use Mingalevme\OneSignal\ClientFactory;
+use Mingalevme\OneSignal\CreateClientOptions;
 use Mingalevme\OneSignal\CreateNotificationOptions;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\ClientException;
 use Mingalevme\OneSignal\Exception\OneSignalException;
 use Mingalevme\Tests\OneSignal\TestCase;
+use RuntimeException;
 
 class ClientTest extends TestCase
 {
+    protected function getClientFactory(): ClientFactory
+    {
+        $factory = parent::getClientFactory();
+        if (!is_a($factory, ClientFactory::class)) {
+            throw new RuntimeException();
+        }
+        return $factory;
+    }
+
     protected function getClient(): Client
     {
         $appId = $this->getStrEnv('ONE_SIGNAL_TEST_APP_ID');
@@ -18,7 +30,7 @@ class ClientTest extends TestCase
         if (empty($appId) || empty($restAPIKey)) {
             self::markTestSkipped('Env vars ONE_SIGNAL_TEST_APP_ID and (or) ONE_SIGNAL_TEST_API_KEY are not set');
         }
-        return $this->getClientFactory()->create($appId, $restAPIKey);
+        return $this->getClientFactory()->create(CreateClientOptions::new($appId, $restAPIKey));
     }
 
     public function testSendingToDefaultSegment(): void
@@ -80,8 +92,10 @@ class ClientTest extends TestCase
     public function testInvalidCredentials(): void
     {
         $client = $this->getClientFactory()->create(
-            '67415017-24e2-4a6c-afc9-a14e7958c4db',
-            'Njk4YTE1YWUtZjhlMi00Yzk2LWExZjAtNTg5ZDhiZGRmZGUx'
+            CreateClientOptions::new(
+                '67415017-24e2-4a6c-afc9-a14e7958c4db',
+                'Njk4YTE1YWUtZjhlMi00Yzk2LWExZjAtNTg5ZDhiZGRmZGUx'
+            )
         );
         try {
             $client->createNotification('test');

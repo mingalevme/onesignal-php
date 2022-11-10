@@ -6,6 +6,7 @@ namespace Mingalevme\Tests\OneSignal\Suites\Feature;
 
 use InvalidArgumentException;
 use Mingalevme\OneSignal\Client;
+use Mingalevme\OneSignal\CreateClientOptions;
 use Mingalevme\OneSignal\CreateNotificationOptions as CNO;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\ClientException;
@@ -210,7 +211,9 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             }
         };
         $this->psrHttpClient = $psrHttpClient;
-        $client = $this->getClientFactory()->create(self::APP_ID, self::REST_API_KEY);
+        $client = $this->getClientFactory()->create(
+            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY)
+        );
         try {
             $client->createNotification('test');
             $this->exceptionHasNotBeenThrown();
@@ -233,7 +236,9 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             }
         };
         $this->psrHttpClient = $psrHttpClient;
-        $client = $this->getClientFactory()->create(self::APP_ID, self::REST_API_KEY);
+        $client = $this->getClientFactory()->create(
+            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY)
+        );
         try {
             $client->createNotification('test');
             $this->exceptionHasNotBeenThrown();
@@ -256,7 +261,9 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             }
         };
         $this->psrHttpClient = $psrHttpClient;
-        $client = $this->getClientFactory()->create(self::APP_ID, self::REST_API_KEY);
+        $client = $this->getClientFactory()->create(
+            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY)
+        );
         try {
             $client->createNotification('test');
             $this->exceptionHasNotBeenThrown();
@@ -373,6 +380,12 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         }
         $psrHttpClient = new StaticResponsePsrHttpClient($response);
         $this->psrHttpClient = $psrHttpClient;
-        return $this->getClientFactory()->create(self::APP_ID, self::REST_API_KEY);
+        $client = $this->getClientFactory()->create(
+            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY)
+        );
+        if (!is_a($client, Client::class)) {
+            throw new RuntimeException();
+        }
+        return $client;
     }
 }

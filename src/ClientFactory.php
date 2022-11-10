@@ -7,41 +7,39 @@ namespace Mingalevme\OneSignal;
 use Psr\Http\Client\ClientInterface as PsrHttpClient;
 use Psr\Http\Message\RequestFactoryInterface as PsrRequestFactory;
 use Psr\Http\Message\StreamFactoryInterface as PsrStreamFactory;
-use Psr\Log\LoggerInterface;
 
 class ClientFactory implements ClientFactoryInterface
 {
     private PsrHttpClient $psrHttpClient;
     private PsrRequestFactory $psrRequestFactory;
     private PsrStreamFactory $psrStreamFactory;
-    private ?LoggerInterface $logger;
 
+    /**
+     * @param PsrHttpClient $psrHttpClient
+     * @param PsrRequestFactory $psrRequestFactory
+     * @param PsrStreamFactory $psrStreamFactory
+     */
     public function __construct(
         PsrHttpClient $psrHttpClient,
         PsrRequestFactory $psrRequestFactory,
-        PsrStreamFactory $psrStreamFactory,
-        ?LoggerInterface $logger
+        PsrStreamFactory $psrStreamFactory
     ) {
         $this->psrHttpClient = $psrHttpClient;
         $this->psrRequestFactory = $psrRequestFactory;
         $this->psrStreamFactory = $psrStreamFactory;
-        $this->logger = $logger;
     }
 
     /**
-     * @param non-empty-string $appId
-     * @param non-empty-string $restAPIKey
+     * @param CreateClientOptions $createClientOptions
      * @return Client
      */
-    public function create(string $appId, string $restAPIKey): Client
+    public function create(CreateClientOptions $createClientOptions): Client
     {
         return new Client(
-            $appId,
-            $restAPIKey,
+            $createClientOptions,
             $this->psrHttpClient,
             $this->psrRequestFactory,
-            $this->psrStreamFactory,
-            $this->logger
+            $this->psrStreamFactory
         );
     }
 }

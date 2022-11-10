@@ -23,8 +23,6 @@ use Psr\Http\Message\RequestFactoryInterface as PsrRequestFactory;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface as PsrStreamFactory;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use RuntimeException;
 use Throwable;
 
@@ -34,6 +32,7 @@ use const JSON_UNESCAPED_SLASHES;
 use const JSON_UNESCAPED_UNICODE;
 
 /**
+ * @see ClientFactory
  * @see ClientTest
  */
 class Client implements ClientInterface
@@ -42,47 +41,40 @@ class Client implements ClientInterface
 
     protected const APP_ID = 'app_id';
 
+    /** @var non-empty-string */
     protected string $appId;
+    /** @var non-empty-string */
     protected string $restAPIKey;
 
     protected PsrHttpClient $psrHttpClient;
     protected PsrRequestFactory $psrRequestFactory;
     protected PsrStreamFactory $psrStreamFactory;
-    protected LoggerInterface $logger;
 
     /** @var non-empty-string */
-    protected string $defaultSegment = CNO::SEGMENTS_SUBSCRIBED_USERS;
+    protected string $defaultSegment;
 
     /** @var non-empty-string */
-    protected string $baseUrl = self::BASE_URL;
-    private ?bool $debug;
+    protected string $baseUrl;
 
     /**
-     *
-     * @param non-empty-string $appId
-     * @param non-empty-string $restAPIKey
+     * @param CreateClientOptions $createClientOptions
      * @param PsrHttpClient $psrHttpClient
      * @param PsrRequestFactory $psrRequestFactory
      * @param PsrStreamFactory $psrStreamFactory
-     * @param LoggerInterface|null $logger
-     * @param bool|null $debug
      */
     public function __construct(
-        string $appId,
-        string $restAPIKey,
+        CreateClientOptions $createClientOptions,
         PsrHttpClient $psrHttpClient,
         PsrRequestFactory $psrRequestFactory,
-        PsrStreamFactory $psrStreamFactory,
-        ?LoggerInterface $logger,
-        ?bool $debug = false
+        PsrStreamFactory $psrStreamFactory
     ) {
-        $this->appId = $appId;
-        $this->restAPIKey = $restAPIKey;
+        $this->appId = $createClientOptions->getAppId();
+        $this->restAPIKey = $createClientOptions->getRestAPIKey();
+        $this->defaultSegment = $createClientOptions->getDefaultSegment() ?: CNO::SEGMENTS_SUBSCRIBED_USERS;
+        $this->baseUrl = $createClientOptions->getBaseUrl() ?: self::BASE_URL;
         $this->psrHttpClient = $psrHttpClient;
         $this->psrRequestFactory = $psrRequestFactory;
         $this->psrStreamFactory = $psrStreamFactory;
-        $this->logger = $logger ?: new NullLogger();
-        $this->debug = $debug;
     }
 
     /**
@@ -92,27 +84,6 @@ class Client implements ClientInterface
     public function setDefaultSegment(string $defaultSegment): self
     {
         $this->defaultSegment = $defaultSegment;
-        return $this;
-    }
-
-    /**
-     * @param non-empty-string $baseUrl
-     * @return static
-     * @noinspection PhpUnused
-     */
-    public function setBaseUrl(string $baseUrl): self
-    {
-        $this->baseUrl = $baseUrl;
-        return $this;
-    }
-
-    /**
-     * @param bool|null $debug
-     * @return $this
-     */
-    public function setDebug(?bool $debug): self
-    {
-        $this->debug = $debug;
         return $this;
     }
 
@@ -302,26 +273,12 @@ class Client implements ClientInterface
 
     protected function makeRequest(RequestInterface $request): ResponseInterface
     {
-        $context = [
-            'app-id' => $this->appId,
-            'method' => $request->getMethod(),
-            'url' => $request->getUri()->__toString(),
-        ];
-
-        if ($this->debug && $request->getBody()->isSeekable()) {
-            $context['body'] = $request->getBody()->getContents();
-            $request->getBody()->rewind();
-        }
-
         $request = $request->withHeader('Authorization', "Basic $this->restAPIKey");
-
-        $this->logger->debug('Sending request to OneSignal has been started', $context);
 
         try {
             $response = $this->psrHttpClient->sendRequest($request);
         } catch (ClientExceptionInterface $e) {
             $message = "Error while sending request to OneSignal: {$e->getMessage()}";
-            $this->logger->error($message, $context);
             if ($e instanceof NetworkExceptionInterface) {
                 throw new NetworkException($request, $message, null, $e);
             }
@@ -330,14 +287,6 @@ class Client implements ClientInterface
             }
             throw new TransferException($request, null, $message, 0, $e);
         }
-
-        $statusCode = $response->getStatusCode();
-
-        $context += [
-            'status' => $statusCode,
-        ];
-
-        $this->logger->debug('Sending request to OneSignal has been finished', $context);
 
         return $response;
     }

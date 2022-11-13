@@ -148,7 +148,7 @@ class Client implements ClientInterface
 
         foreach ((array)$whereTags as $key => $value) {
             $tags["$key=$value"] = [
-                CNO::FILTERS_TAG_KEY => $key,
+                CNO::FILTERS_KEY => $key,
                 CNO::FILTERS_RELATION => '=',
                 CNO::FILTERS_VALUE => $value,
             ];
@@ -175,7 +175,7 @@ class Client implements ClientInterface
              * @phpstan-ignore-next-line
              */
             $data[CNO::FILTERS][] = [
-                    CNO::FILTERS_FIELD => CNO::FILTERS_FIELD_TAG,
+                    CNO::FILTERS_FIELD => CNO::FILTERS_TAG,
                 ] + $tag;
         }
 

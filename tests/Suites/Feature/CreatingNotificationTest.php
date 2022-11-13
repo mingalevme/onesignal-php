@@ -68,15 +68,15 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         ], [
             CNO::FILTERS => [
                 [
-                    CNO::FILTERS_FIELD => CNO::FILTERS_FIELD_TAG,
-                    CNO::FILTERS_TAG_KEY => 'tag2',
+                    CNO::FILTERS_FIELD => CNO::FILTERS_TAG,
+                    CNO::FILTERS_KEY => 'tag2',
                     CNO::FILTERS_RELATION => '>',
                     CNO::FILTERS_VALUE => '1',
                 ],
             ],
             CNO::TAGS => [
                 [
-                    CNO::FILTERS_TAG_KEY => 'tag3',
+                    CNO::FILTERS_KEY => 'tag3',
                     CNO::FILTERS_RELATION => '>=',
                     CNO::FILTERS_VALUE => '1',
                 ],

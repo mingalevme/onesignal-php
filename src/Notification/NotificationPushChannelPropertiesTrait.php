@@ -8,9 +8,9 @@ use InvalidArgumentException;
 use Mingalevme\OneSignal\CreateNotificationOptions as CNO;
 
 /**
- * @mixin NotificationBuilder
+ * @mixin Notification
  */
-trait NotificationBuilderPushChannelPropertiesTrait
+trait NotificationPushChannelPropertiesTrait
 {
     // Push Channel Properties / Push Notification Content
 
@@ -46,32 +46,19 @@ trait NotificationBuilderPushChannelPropertiesTrait
      * @param non-empty-string|non-empty-array<non-empty-string, non-empty-string> $text
      * @return $this
      */
-    private function setLocalizedText(string $attributeName, $text): self
+    protected function setLocalizedText(string $attributeName, $text): self
     {
         if (is_string($text)) {
-            $this->data[$attributeName] = [
+            return $this->setAttribute($attributeName, [
                 'en' => $text,
-            ];
-            return $this;
+            ]);
         }
 
         if (empty($text['en'])) {
             throw new InvalidArgumentException('Invalid or missing default text of notification (content["en"])');
         }
 
-        $this->data[$attributeName] = $text;
-
-        return $this;
-    }
-
-    /**
-     * @param non-empty-string $value
-     * @return $this
-     */
-    public function setTemplateId(string $value): self
-    {
-        $this->data[CNO::TEMPLATE_ID] = $value;
-        return $this;
+        return $this->setAttribute($attributeName, $text);
     }
 
     /**
@@ -80,18 +67,22 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setContentAvailable(bool $value): self
     {
-        $this->data[CNO::CONTENT_AVAILABLE] = $value;
-        return $this;
+        return $this->setAttribute(CNO::CONTENT_AVAILABLE, $value);
     }
 
     /**
+     * Use to target a specific experience in your App Clip, or to target your notification to a specific window
+     *  in a multi-scene App:
+     *  https://documentation.onesignal.com/docs/app-clip-support
+     *
+     * iOS 13+
+     *
      * @param non-empty-string $value
      * @return $this
      */
     public function setTargetContentIdentifier(string $value): self
     {
-        $this->data[CNO::TARGET_CONTENT_IDENTIFIER] = $value;
-        return $this;
+        return $this->setAttribute(CNO::TARGET_CONTENT_IDENTIFIER, $value);
     }
 
     // Push Channel Properties / Attachments
@@ -109,8 +100,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setData(array $value): self
     {
-        $this->data[CNO::DATA] = $value;
-        return $this;
+        return $this->setAttribute(CNO::DATA, $value);
     }
 
     /**
@@ -124,8 +114,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setHuaweiMsgType(string $value): self
     {
-        $this->data[CNO::HUAWEI_MSG_TYPE] = $value;
-        return $this;
+        return $this->setAttribute(CNO::HUAWEI_MSG_TYPE, $value);
     }
 
     /**
@@ -144,8 +133,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setUrl(string $value): self
     {
-        $this->data[CNO::URL] = $value;
-        return $this;
+        return $this->setAttribute(CNO::URL, $value);
     }
 
     /**
@@ -157,8 +145,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setWebUrl(string $value): self
     {
-        $this->data[CNO::WEB_URL] = $value;
-        return $this;
+        return $this->setAttribute(CNO::WEB_URL, $value);
     }
 
     /**
@@ -170,8 +157,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setAppUrl(string $value): self
     {
-        $this->data[CNO::APP_URL] = $value;
-        return $this;
+        return $this->setAttribute(CNO::APP_URL, $value);
     }
 
     /**
@@ -185,13 +171,12 @@ trait NotificationBuilderPushChannelPropertiesTrait
      *
      * iOS 10+
      *
-     * @param non-empty-array<string, mixed> $value
+     * @param non-empty-array<non-empty-string, non-empty-string> $value
      * @return $this
      */
     public function setIosAttachments(array $value): self
     {
-        $this->data[CNO::IOS_ATTACHMENTS] = $value;
-        return $this;
+        return $this->setAttribute(CNO::IOS_ATTACHMENTS, $value);
     }
 
     /**
@@ -202,8 +187,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setBigPicture(string $value): self
     {
-        $this->data[CNO::BIG_PICTURE] = $value;
-        return $this;
+        return $this->setAttribute(CNO::BIG_PICTURE, $value);
     }
 
     /**
@@ -214,8 +198,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setHuaweiBigPicture(string $value): self
     {
-        $this->data[CNO::HUAWEI_BIG_PICTURE] = $value;
-        return $this;
+        return $this->setAttribute(CNO::HUAWEI_BIG_PICTURE, $value);
     }
 
     /**
@@ -231,8 +214,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setChromeWebImage(string $value): self
     {
-        $this->data[CNO::CHROME_WEB_IMAGE] = $value;
-        return $this;
+        return $this->setAttribute(CNO::CHROME_WEB_IMAGE, $value);
     }
 
     /**
@@ -243,8 +225,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setAdmBigPicture(string $value): self
     {
-        $this->data[CNO::ADM_BIG_PICTURE] = $value;
-        return $this;
+        return $this->setAttribute(CNO::ADM_BIG_PICTURE, $value);
     }
 
     /**
@@ -255,8 +236,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setChromeBigPicture(string $value): self
     {
-        $this->data[CNO::CHROME_BIG_PICTURE] = $value;
-        return $this;
+        return $this->setAttribute(CNO::CHROME_BIG_PICTURE, $value);
     }
 
     // Push Channel Properties / Action Buttons
@@ -278,13 +258,13 @@ trait NotificationBuilderPushChannelPropertiesTrait
      *
      * iOS 8.0+, Android 4.1+, and derivatives like Amazon
      *
-     * @param non-empty-list<array{id: non-empty-string, text: non-empty-string, icon?: non-empty-string}> $value
+     * @param non-empty-list<ActionButton> $value
      * @return $this
      */
     public function setButtons(array $value): self
     {
-        $this->data[CNO::BUTTONS] = $value;
-        return $this;
+        $data = array_map(fn(ActionButton $button) => $button->toOneSignalActionButton(), $value);
+        return $this->setAttribute(CNO::BUTTONS, $data);
     }
 
     /**
@@ -295,13 +275,13 @@ trait NotificationBuilderPushChannelPropertiesTrait
      *  {"id": "read-more-button", "text": "Read more", "icon": "http://i.imgur.com/MIxJp1L.png", "url": "https://yoursite.com"}
      * ]
      *
-     * @param non-empty-list<array{id: non-empty-string, text?: non-empty-string, icon?: non-empty-string, url?: non-empty-string}> $value
+     * @param non-empty-list<WebActionButton> $value
      * @return $this
      */
     public function setWebButtons(array $value): self
     {
-        $this->data[CNO::WEB_BUTTONS] = $value;
-        return $this;
+        $data = array_map(fn(WebActionButton $button) => $button->toOneSignalActionButton(), $value);
+        return $this->setAttribute(CNO::WEB_BUTTONS, $data);
     }
 
     /**
@@ -317,12 +297,11 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setIosCategory(string $value): self
     {
-        $this->data[CNO::IOS_CATEGORY] = $value;
-        return $this;
+        return $this->setAttribute(CNO::IOS_CATEGORY, $value);
     }
 
     /**
-     * In iOS you can specify the type of icon to be used in an Action button as being either ['system', 'custom']
+     * In iOS, you can specify the type of icon to be used in an Action button as being either ['system', 'custom']
      *
      * @param non-empty-string $value
      * @psalm-param 'system'|'custom' $value
@@ -331,8 +310,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setIconType(string $value): self
     {
-        $this->data[CNO::ICON_TYPE] = $value;
-        return $this;
+        return $this->setAttribute(CNO::ICON_TYPE, $value);
     }
 
     // Push Channel Properties / Appearance
@@ -347,8 +325,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setAndroidChannelId(string $value): self
     {
-        $this->data[CNO::ANDROID_CHANNEL_ID] = $value;
-        return $this;
+        return $this->setAttribute(CNO::ANDROID_CHANNEL_ID, $value);
     }
 
     /**
@@ -361,8 +338,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setHuaweiChannelId(string $value): self
     {
-        $this->data[CNO::HUAWEI_CHANNEL_ID] = $value;
-        return $this;
+        return $this->setAttribute(CNO::HUAWEI_CHANNEL_ID, $value);
     }
 
     /**
@@ -373,8 +349,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setExistingAndroidChannelId(string $value): self
     {
-        $this->data[CNO::EXISTING_ANDROID_CHANNEL_ID] = $value;
-        return $this;
+        return $this->setAttribute(CNO::EXISTING_ANDROID_CHANNEL_ID, $value);
     }
 
     /**
@@ -385,8 +360,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setHuaweiExistingChannelId(string $value): self
     {
-        $this->data[CNO::HUAWEI_EXISTING_CHANNEL_ID] = $value;
-        return $this;
+        return $this->setAttribute(CNO::HUAWEI_EXISTING_CHANNEL_ID, $value);
     }
 
     /**
@@ -401,8 +375,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setAndroidBackgroundLayout(array $value): self
     {
-        $this->data[CNO::ANDROID_BACKGROUND_LAYOUT] = $value;
-        return $this;
+        return $this->setAttribute(CNO::ANDROID_BACKGROUND_LAYOUT, $value);
     }
 
     /**
@@ -416,8 +389,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setSmallIcon(string $value): self
     {
-        $this->data[CNO::SMALL_ICON] = $value;
-        return $this;
+        return $this->setAttribute(CNO::SMALL_ICON, $value);
     }
 
     /**
@@ -430,8 +402,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setHuaweiSmallIcon(string $value): self
     {
-        $this->data[CNO::HUAWEI_SMALL_ICON] = $value;
-        return $this;
+        return $this->setAttribute(CNO::HUAWEI_SMALL_ICON, $value);
     }
 
     /**
@@ -444,8 +415,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setLargeIcon(string $value): self
     {
-        $this->data[CNO::LARGE_ICON] = $value;
-        return $this;
+        return $this->setAttribute(CNO::LARGE_ICON, $value);
     }
 
     /**
@@ -458,8 +428,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setHuaweiLargeIcon(string $value): self
     {
-        $this->data[CNO::HUAWEI_LARGE_ICON] = $value;
-        return $this;
+        return $this->setAttribute(CNO::HUAWEI_LARGE_ICON, $value);
     }
 
     /**
@@ -470,8 +439,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setAdmSmallIcon(string $value): self
     {
-        $this->data[CNO::ADM_SMALL_ICON] = $value;
-        return $this;
+        return $this->setAttribute(CNO::ADM_SMALL_ICON, $value);
     }
 
     /**
@@ -482,8 +450,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setAdmLargeIcon(string $value): self
     {
-        $this->data[CNO::ADM_LARGE_ICON] = $value;
-        return $this;
+        return $this->setAttribute(CNO::ADM_LARGE_ICON, $value);
     }
 
     /**
@@ -496,20 +463,21 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setChromeWebIcon(string $value): self
     {
-        $this->data[CNO::CHROME_WEB_ICON] = $value;
-        return $this;
+        return $this->setAttribute(CNO::CHROME_WEB_ICON, $value);
     }
 
     /**
      * Sets the web push notification icon for Android devices in the notification shade. Please see
+     *  https://documentation.onesignal.com/docs/web-push-notification-icons#section-badge
+     *
+     * Chrome 53+ on Android 6.0+
      *
      * @param non-empty-string $value
      * @return $this
      */
     public function setChromeWebBadge(string $value): self
     {
-        $this->data[CNO::CHROME_WEB_BADGE] = $value;
-        return $this;
+        return $this->setAttribute(CNO::CHROME_WEB_BADGE, $value);
     }
 
     /**
@@ -522,8 +490,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setFirefoxIcon(string $value): self
     {
-        $this->data[CNO::FIREFOX_ICON] = $value;
-        return $this;
+        return $this->setAttribute(CNO::FIREFOX_ICON, $value);
     }
 
     /**
@@ -538,8 +505,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setChromeIcon(string $value): self
     {
-        $this->data[CNO::CHROME_ICON] = $value;
-        return $this;
+        return $this->setAttribute(CNO::CHROME_ICON, $value);
     }
 
     /**
@@ -553,8 +519,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setIosSound(string $value): self
     {
-        $this->data[CNO::IOS_SOUND] = $value;
-        return $this;
+        return $this->setAttribute(CNO::IOS_SOUND, $value);
     }
 
     /**
@@ -567,8 +532,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setAndroidAccentColor(string $value): self
     {
-        $this->data[CNO::ANDROID_ACCENT_COLOR] = $value;
-        return $this;
+        return $this->setAttribute(CNO::ANDROID_ACCENT_COLOR, $value);
     }
 
     /**
@@ -581,8 +545,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setHuaweiAccentColor(string $value): self
     {
-        $this->data[CNO::HUAWEI_ACCENT_COLOR] = $value;
-        return $this;
+        return $this->setAttribute(CNO::HUAWEI_ACCENT_COLOR, $value);
     }
 
     /**
@@ -604,8 +567,7 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setIosBadgeType(string $value): self
     {
-        $this->data[CNO::IOS_BADGE_TYPE] = $value;
-        return $this;
+        return $this->setAttribute(CNO::IOS_BADGE_TYPE, $value);
     }
 
     /**
@@ -613,13 +575,12 @@ trait NotificationBuilderPushChannelPropertiesTrait
      *
      * You can use a negative number to decrease the badge count when used with an ios_badgeType of Increase.
      *
-     * @param int $value
+     * @param int<0, max> $value
      * @return $this
      */
     public function setIosBadgeCount(int $value): self
     {
-        $this->data[CNO::IOS_BADGE_COUNT] = $value;
-        return $this;
+        return $this->setAttribute(CNO::IOS_BADGE_COUNT, $value);
     }
 
     /**
@@ -633,9 +594,250 @@ trait NotificationBuilderPushChannelPropertiesTrait
      */
     public function setApnsAlert(array $value): self
     {
-        $this->data[CNO::APNS_ALERT] = $value;
-        return $this;
+        return $this->setAttribute(CNO::APNS_ALERT, $value);
     }
 
     // Grouping & Collapsing
+
+    /**
+     * Notifications with the same group will be stacked together using Android's Notification Grouping feature:
+     *  https://documentation.onesignal.com/docs/android-customizations#section-notification-grouping
+     *
+     * @param non-empty-string $value
+     * @return $this
+     */
+    public function setAndroidGroup(string $value): self
+    {
+        return $this->setAttribute(CNO::ANDROID_GROUP, $value);
+    }
+
+    /**
+     * Summary message to display when 2+ notifications are stacked together. Default is "# new messages".
+     * Include $[notif_count] in your message and it will be replaced with the current number.
+     *
+     * Languages - The value of each key is the message that will be sent to users for that language.
+     * "en" (English) is required.
+     * The key of each hash is either a 2 character language code or one of zh-Hans/zh-Hant for
+     *  Simplified or Traditional Chinese. Read more: supported languages.
+     *
+     * Example: {"en": "You have $[notif_count] new messages"}
+     *
+     * Note: This only works for Android 6 and older. Android 7+ allows full expansion of all message.
+     *
+     * @param non-empty-string|non-empty-array<non-empty-string, non-empty-string> $value
+     * @return $this
+     */
+    public function setAndroidGroupMessage($value): self
+    {
+        return $this->setLocalizedText(CNO::ANDROID_GROUP_MESSAGE, $value);
+    }
+
+    /**
+     * Notifications with the same group will be stacked together using Android's Notification Grouping feature:
+     *  https://documentation.onesignal.com/docs/android-customizations#section-notification-grouping
+     *
+     * @param non-empty-string $value
+     * @return $this
+     */
+    public function setAdmGroup(string $value): self
+    {
+        return $this->setAttribute(CNO::ADM_GROUP, $value);
+    }
+
+    /**
+     * Summary message to display when 2+ notifications are stacked together. Default is "# new messages".
+     * Include $[notif_count] in your message and it will be replaced with the current number.
+     * "en" (English) is required.
+     * The key of each hash is either a 2 character language code or one of zh-Hans/zh-Hant for
+     *  Simplified or Traditional Chinese.
+     * The value of each key is the message that will be sent to users for that language.
+     *
+     * Example: {"en": "You have $[notif_count] new messages"}
+     *
+     * @param non-empty-string|non-empty-array<non-empty-string, non-empty-string> $value
+     * @return $this
+     */
+    public function setAdmGroupMessage($value): self
+    {
+        return $this->setLocalizedText(CNO::ADM_GROUP_MESSAGE, $value);
+    }
+
+    /**
+     * Only one notification with the same id will be shown on the device.
+     * Use the same id to update an existing notification instead of showing a new one. Limit of 64 characters.
+     *
+     * iOS 10+, Android
+     *
+     * @param non-empty-string $value
+     * @return $this
+     */
+    public function setCollapseId(string $value): self
+    {
+        return $this->setAttribute(CNO::COLLAPSE_ID, $value);
+    }
+
+    /**
+     * Display multiple notifications at once with different topics.
+     *
+     * Push - All Browsers
+     *
+     * @param non-empty-string $value
+     * @return $this
+     */
+    public function setWebPushTopic(string $value): self
+    {
+        return $this->setAttribute(CNO::WEB_PUSH_TOPIC, $value);
+    }
+
+    /**
+     * This parameter is supported in iOS 12 and above. It allows you to group related notifications together.
+     *
+     * If two notifications have the same thread-id, they will both be added to the same group.
+     *
+     * iOS 12+
+     *
+     * @param non-empty-string $value
+     * @return $this
+     */
+    public function setThreadId(string $value): self
+    {
+        return $this->setAttribute(CNO::THREAD_ID, $value);
+    }
+
+    /**
+     * When using thread_id to create grouped notifications in iOS 12+, you can also control the summary.
+     * For example, a grouped notification can say "12 more notifications from John Doe".
+     *
+     * The summary_arg lets you set the name of the person/thing the notifications are coming from,
+     *  and will show up as "X more notifications from summary_arg"
+     *
+     * iOS 12+
+     *
+     * @param non-empty-string $value
+     * @return $this
+     */
+    public function setSummaryArg(string $value): self
+    {
+        return $this->setAttribute(CNO::SUMMARY_ARG, $value);
+    }
+
+    /**
+     * When using thread_id, you can also control the count of the number of notifications in the group.
+     *  For example, if the group already has 12 notifications, and you send a new notification with
+     *  summary_arg_count = 2, the new total will be 14 and the summary will be "14 more notifications from summary_arg"
+     *
+     * iOS 12+
+     *
+     * @param int<1, max> $value
+     * @return $this
+     */
+    public function setSummaryArgCount(int $value): self
+    {
+        return $this->setAttribute(CNO::SUMMARY_ARG_COUNT, $value);
+    }
+
+    /**
+     * A iOS: Relevance Score is a score to be set per notification to indicate how it should be displayed when grouped:
+     *  https://documentation.onesignal.com/docs/ios-relevance-score
+     *
+     * iOS 15+
+     *
+     * @param float $value float<0, 1>
+     * @return $this
+     */
+    public function setIosRelevanceScore(float $value): self
+    {
+        if ($value < 0 || $value > 1) {
+            throw new InvalidArgumentException('Value must be between 0-1');
+        }
+        return $this->setAttribute(CNO::IOS_RELEVANCE_SCORE, $value);
+    }
+
+    /**
+     * iOS: Focus Modes and Interruption Levels indicate the priority and delivery timing of a notification,
+     *  to ‘interrupt’ the user. Up until iOS 15, Apple primarily focused on Critical notifications:
+     *  https://documentation.onesignal.com/docs/ios-focus-modes-and-interruption-levels
+     *
+     * Can choose from options: ['active', 'passive', 'time_sensitive', 'critical']
+     *
+     * Default is active.
+     *
+     * @param non-empty-string $value
+     * @psalm-param 'active'|'passive'|'time_sensitive'|'critical' $value
+     * @phpstan-param 'active'|'passive'|'time_sensitive'|'critical' $value
+     * @return $this
+     */
+    public function setIosInterruptionLevel(string $value): self
+    {
+        return $this->setAttribute(CNO::IOS_INTERRUPTION_LEVEL, $value);
+    }
+
+    // Delivery
+
+    /**
+     * Time To Live - In seconds. The notification will be expired if the device does not come back online within
+     *  this time.
+     * The default is 259,200 seconds (3 days).
+     *
+     * Max value to set is 2419200 seconds (28 days).
+     *
+     * @param int<1, 2419200> $value
+     * @return $this
+     */
+    public function setTtl(int $value): self
+    {
+        return $this->setAttribute(CNO::TTL, $value);
+    }
+
+    /**
+     * Delivery priority through the push server (example GCM/FCM).
+     * Pass 10 for high priority or any other integer for normal priority.
+     * Defaults to normal priority for Android and high for iOS.
+     * For Android 6.0+ devices setting priority to high will wake the device out of doze mode.
+     *
+     * @param int<1, 2419200> $value
+     * @return $this
+     */
+    public function setPriority(int $value): self
+    {
+        return $this->setAttribute(CNO::PRIORITY, $value);
+    }
+
+    /**
+     * valid values: "voip"
+     * Set the value to "voip" for sending VoIP Notifications:
+     *  https://documentation.onesignal.com/docs/voip-notifications
+     *
+     * This field maps to the APNS header apns-push-type.
+     *
+     * Note: "alert" and "background" are automatically set by OneSignal
+     *
+     * iOS
+     *
+     * @param non-empty-string $value
+     * @psalm-param 'voip' $value
+     * @phpstan-param 'voip' $value
+     * @return $this
+     */
+    public function setApnsPushTypeOverride(string $value): self
+    {
+        return $this->setAttribute(CNO::APNS_PUSH_TYPE_OVERRIDE, $value);
+    }
+
+    /**
+     * When frequency capping is enabled for the app, sending true will apply the frequency capping to the notification.
+     * If the parameter is not included, the default behavior is to apply frequency capping if the setting is enabled
+     *  for the app.
+     * Setting the parameter to false will override the frequency capping, meaning that the notification will be sent
+     *  without considering frequency capping.
+     *
+     * All - Push
+     *
+     * @param bool $value
+     * @return $this
+     */
+    public function setEnableFrequencyCap(bool $value): self
+    {
+        return $this->setAttribute(CNO::ENABLE_FREQUENCY_CAP, $value);
+    }
 }

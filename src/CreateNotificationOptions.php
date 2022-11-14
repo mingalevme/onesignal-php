@@ -73,7 +73,16 @@ class CreateNotificationOptions
     public const TARGET_CONTENT_IDENTIFIER = 'target_content_identifier'; // iOS 13+
 
     // Email Content
-    // ...
+    public const EMAIL_SUBJECT = 'email_subject';
+    public const EMAIL_BODY = 'email_body';
+    public const EMAIL_FROM_NAME = 'email_from_name';
+    public const EMAIL_FROM_ADDRESS = 'email_from_address';
+    public const EMAIL_PREHEADER = 'email_preheader';
+    public const DISABLE_EMAIL_CLICK_TRACKING = 'disable_email_click_tracking';
+
+    // SMS
+    public const SMS_FROM = 'sms_from';
+    public const SMS_MEDIA_URLS = 'sms_media_urls';
 
     // Attachments
     public const DATA = 'data';
@@ -125,6 +134,7 @@ class CreateNotificationOptions
     public const IOS_BADGE_COUNT = 'ios_badgeCount'; // iOS
     // This is known as APNS-collapse-id on iOS 10+ and collapse_key on Android.
     public const COLLAPSE_ID = 'collapse_id';
+    public const WEB_PUSH_TOPIC = 'web_push_topic';
     public const APNS_ALERT = 'apns_alert'; // iOS 10+
 
     // Delivery
@@ -138,6 +148,7 @@ class CreateNotificationOptions
     public const PRIORITY_LOW = 5;
     public const PRIORITY_HIGH = 10;
     public const APNS_PUSH_TYPE_OVERRIDE = 'apns_push_type_override'; // iOS
+    public const ENABLE_FREQUENCY_CAP = 'enable_frequency_cap';
 
     // Throttling
     public const THROTTLE_RATE_PER_MINUTE = 'throttle_rate_per_minute';
@@ -146,9 +157,13 @@ class CreateNotificationOptions
     // Grouping & Collapsing
     public const ANDROID_GROUP = 'android_group'; // ANDROID
     public const ANDROID_GROUP_MESSAGE = 'android_group_message'; // ANDROID
+    public const ADM_GROUP = 'adm_group'; // ANDROID
+    public const ADM_GROUP_MESSAGE = 'adm_group_message'; // ANDROID
     public const THREAD_ID = 'thread_id'; // iOS 12+
     public const SUMMARY_ARG = 'summary_arg'; // iOS 12+
     public const SUMMARY_ARG_COUNT = 'summary_arg_count'; // iOS 12+
+    public const IOS_RELEVANCE_SCORE = 'ios_relevance_score'; // iOS 15+
+    public const IOS_INTERRUPTION_LEVEL = 'ios_interruption_level'; // iOS 15+
 
     // Platform to Deliver To
     public const IS_IOS = 'isIos';

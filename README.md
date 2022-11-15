@@ -75,9 +75,7 @@ class NotifySubscribersOnPostCreatedEventHandler
         /** @var string[] $subscriberIds */
         $subscriberIds = $this->repo->getSubscriberIdsOfAuthor($post->getAuthorId());
         $notification = PushNotification::createContentsNotification($post->getTitle())
-            ->setHeadings([
-                'en' => $post->getAuthorDisplayName(),
-            ])
+            ->setHeadings($post->getAuthorDisplayName())
             ->setData([
                 'post_id' => $post->getId(),
             ])

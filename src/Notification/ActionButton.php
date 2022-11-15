@@ -18,7 +18,7 @@ class ActionButton
      * @param non-empty-string $text
      * @param non-empty-string $icon URL or resource id
      */
-    public function __construct(string $actionId, string $text, string $icon, ?string $launchUrl = null)
+    public function __construct(string $actionId, string $text, string $icon)
     {
         $this->actionId = $actionId;
         $this->text = $text;

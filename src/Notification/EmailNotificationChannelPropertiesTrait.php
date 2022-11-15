@@ -7,9 +7,9 @@ namespace Mingalevme\OneSignal\Notification;
 use Mingalevme\OneSignal\CreateNotificationOptions as CNO;
 
 /**
- * @mixin Notification
+ * @mixin AbstractNotification
  */
-trait NotificationEmailContentPropertiesTrait
+trait EmailNotificationChannelPropertiesTrait
 {
     /**
      * Required: The subject of the email.
@@ -87,5 +87,20 @@ trait NotificationEmailContentPropertiesTrait
     public function setDisableEmailClickTracking(bool $value): self
     {
         return $this->setAttribute(CNO::DISABLE_EMAIL_CLICK_TRACKING, $value);
+    }
+
+    /**
+     * Use a template you set up on our dashboard.
+     *
+     * The template_id is the UUID found in the URL when viewing a template on our dashboard.
+     *
+     * Example: be4a8044-bbd6-11e4-a581-000c2940e62c
+     *
+     * @param non-empty-string $value UUID
+     * @return $this
+     */
+    public function setTemplateId(string $value): self
+    {
+        return $this->setAttribute(CNO::TEMPLATE_ID, $value);
     }
 }

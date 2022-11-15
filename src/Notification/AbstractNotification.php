@@ -18,29 +18,17 @@ use Mingalevme\Tests\OneSignal\Suites\Feature\NotificationBuildingTest;
  *
  * @see NotificationBuildingTest
  */
-class Notification implements NotificationInterface
+abstract class AbstractNotification implements NotificationInterface
 {
-    use NotificationPushChannelPropertiesTrait;
-    use NotificationEmailContentPropertiesTrait;
-    use NotificationSmsChannelPropertiesTrait;
-
     /** @var array<non-empty-string, mixed> */
-    private array $data = [
+    protected array $data = [
         CNO::FILTERS => [],
     ];
 
-    /**
-     * @param array<non-empty-string, mixed>|null $data
-     */
-    public function __construct(?array $data = null)
-    {
-        if ($data) {
-            $this->data = $data + $this->data;
-        }
-    }
+    protected bool $isTargetSet = false;
 
     /**
-     * @return non-empty-array<string, mixed>
+     * @return non-empty-array<non-empty-string, mixed>
      */
     public function toOneSignalData(): array
     {
@@ -50,29 +38,15 @@ class Notification implements NotificationInterface
             throw new InvalidArgumentException('Notification cannot be empty');
         }
 
-        if (empty($data[CNO::CONTENTS])) {
-            if (empty($data[CNO::CONTENT_AVAILABLE])) {
-                if (empty($data[CNO::TEMPLATE_ID])) {
-                    throw new InvalidArgumentException(
-                        'Title is required unless content_available=true or template_id is set'
-                    );
-                }
-            }
-        }
-
-        if (!empty($data[CNO::DELIVERY_TIME_OF_DAY])) {
-            if (($data[CNO::DELAYED_OPTION] ?? null) !== CNO::DELAYED_OPTION_TIMEZONE) {
-                throw new InvalidArgumentException(
-                    'delivery_time_of_day mist be used with delayed_option=timezone'
-                );
-            }
+        if (!$this->isTargetSet) {
+            $data[CNO::INCLUDED_SEGMENTS] = [CNO::SEGMENTS_ALL];
         }
 
         return $data;
     }
 
     /**
-     * @param string $name
+     * @param non-empty-string $name
      * @param mixed $value
      * @return $this
      */
@@ -88,10 +62,42 @@ class Notification implements NotificationInterface
      */
     public function setAttributes(array $attributes): self
     {
+        /** @psalm-suppress MixedAssignment */
         foreach ($attributes as $name => $value) {
             $this->setAttribute($name, $value);
         }
         return $this;
+    }
+
+    /**
+     * @param non-empty-string $name
+     * @param mixed $value
+     * @return $this
+     */
+    protected function setTargetAttribute(string $name, $value): self
+    {
+        $this->isTargetSet = true;
+        return $this->setAttribute($name, $value);
+    }
+
+    /**
+     * @param non-empty-string $attributeName
+     * @param non-empty-string|non-empty-array<non-empty-string, non-empty-string> $text
+     * @return $this
+     */
+    protected function setLocalizedText(string $attributeName, $text): self
+    {
+        if (is_string($text)) {
+            return $this->setAttribute($attributeName, [
+                'en' => $text,
+            ]);
+        }
+
+        if (empty($text['en'])) {
+            throw new InvalidArgumentException('Invalid or missing default text of notification (content["en"])');
+        }
+
+        return $this->setAttribute($attributeName, $text);
     }
 
     //
@@ -107,7 +113,7 @@ class Notification implements NotificationInterface
      */
     public function setIncludedSegments($value): self
     {
-        return $this->setAttribute(CNO::INCLUDED_SEGMENTS, (array)$value);
+        return $this->setTargetAttribute(CNO::INCLUDED_SEGMENTS, (array)$value);
     }
 
 
@@ -143,6 +149,8 @@ class Notification implements NotificationInterface
         $this->data[CNO::FILTERS][] = [
                 CNO::FILTERS_FIELD => $field,
             ] + $value;
+
+        $this->isTargetSet = true;
 
         return $this;
     }
@@ -223,7 +231,8 @@ class Notification implements NotificationInterface
      * @param non-empty-string $relation
      * @psalm-param '>'|'<'|'=' $relation
      * @phpstan-param '>'|'<'|'=' $relation
-     * @param numeric-string $value float<0, max> Amount in USD a user has spent on IAP (In-App Purchases). Example: "0.99"
+     * @param numeric-string $value float<0, max> Amount in USD a user has spent on IAP (In-App Purchases).
+     *  Example: "0.99"
      * @return $this
      */
     public function addFilterAmountSpent(string $relation, string $value): self
@@ -405,7 +414,7 @@ class Notification implements NotificationInterface
      */
     public function setIncludePlayerIds($value): self
     {
-        return $this->setAttribute(CNO::INCLUDE_PLAYER_IDS, (array)$value);
+        return $this->setTargetAttribute(CNO::INCLUDE_PLAYER_IDS, (array)$value);
     }
 
     /**
@@ -421,7 +430,7 @@ class Notification implements NotificationInterface
      */
     public function setIncludeExternalUserIds($value): self
     {
-        return $this->setAttribute(CNO::INCLUDE_EXTERNAL_USER_IDS, (array)$value);
+        return $this->setTargetAttribute(CNO::INCLUDE_EXTERNAL_USER_IDS, (array)$value);
     }
 
     /**
@@ -435,7 +444,7 @@ class Notification implements NotificationInterface
      */
     public function setIncludeEmailTokens($value): self
     {
-        return $this->setAttribute(CNO::INCLUDE_EMAIL_TOKENS, (array)$value);
+        return $this->setTargetAttribute(CNO::INCLUDE_EMAIL_TOKENS, (array)$value);
     }
 
     /**
@@ -453,7 +462,7 @@ class Notification implements NotificationInterface
      */
     public function setIncludePhoneNumbers($value): self
     {
-        return $this->setAttribute(CNO::INCLUDE_PHONE_NUMBERS, (array)$value);
+        return $this->setTargetAttribute(CNO::INCLUDE_PHONE_NUMBERS, (array)$value);
     }
 
     /**
@@ -473,7 +482,7 @@ class Notification implements NotificationInterface
      */
     public function setIncludeIosTokens($value): self
     {
-        return $this->setAttribute(CNO::INCLUDE_IOS_TOKENS, (array)$value);
+        return $this->setTargetAttribute(CNO::INCLUDE_IOS_TOKENS, (array)$value);
     }
 
     /**
@@ -490,7 +499,7 @@ class Notification implements NotificationInterface
      */
     public function setIncludeWpWnsUris($value): self
     {
-        return $this->setAttribute(CNO::INCLUDE_WP_WNS_URIS, (array)$value);
+        return $this->setTargetAttribute(CNO::INCLUDE_WP_WNS_URIS, (array)$value);
     }
 
     /**
@@ -508,7 +517,7 @@ class Notification implements NotificationInterface
      */
     public function setIncludeAmazonRegIds($value): self
     {
-        return $this->setAttribute(CNO::INCLUDE_AMAZON_REG_IDS, (array)$value);
+        return $this->setTargetAttribute(CNO::INCLUDE_AMAZON_REG_IDS, (array)$value);
     }
 
     /**
@@ -526,7 +535,7 @@ class Notification implements NotificationInterface
      */
     public function setIncludeChromeRegIds($value): self
     {
-        return $this->setAttribute(CNO::INCLUDE_CHROME_REG_IDS, (array)$value);
+        return $this->setTargetAttribute(CNO::INCLUDE_CHROME_REG_IDS, (array)$value);
     }
 
     /**
@@ -544,7 +553,7 @@ class Notification implements NotificationInterface
      */
     public function setIncludeChromeWebRegIds($value): self
     {
-        return $this->setAttribute(CNO::INCLUDE_CHROME_WEB_REG_IDS, (array)$value);
+        return $this->setTargetAttribute(CNO::INCLUDE_CHROME_WEB_REG_IDS, (array)$value);
     }
 
     /**
@@ -562,7 +571,7 @@ class Notification implements NotificationInterface
      */
     public function setIncludeAndroidRegIds($value): self
     {
-        return $this->setAttribute(CNO::INCLUDE_ANDROID_REG_IDS, (array)$value);
+        return $this->setTargetAttribute(CNO::INCLUDE_ANDROID_REG_IDS, (array)$value);
     }
 
     /*
@@ -713,22 +722,6 @@ class Notification implements NotificationInterface
     }
 
     // BODY PARAMS
-
-    /**
-     * Use a template you set up on our dashboard.
-     *
-     * The template_id is the UUID found in the URL when viewing a template on our dashboard.
-     *
-     * Example: be4a8044-bbd6-11e4-a581-000c2940e62c
-     *
-     *
-     * @param non-empty-string $value
-     * @return $this
-     */
-    public function setTemplateId(string $value): self
-    {
-        return $this->setAttribute(CNO::TEMPLATE_ID, $value);
-    }
 
     /**
      * An internal name to assist with your campaign organization for tracking message within the OneSignal dashboard

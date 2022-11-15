@@ -7,9 +7,9 @@ namespace Mingalevme\OneSignal\Notification;
 use Mingalevme\OneSignal\CreateNotificationOptions as CNO;
 
 /**
- * @mixin Notification
+ * @mixin AbstractNotification
  */
-trait NotificationSmsChannelPropertiesTrait
+trait SmsNotificationChannelPropertiesTrait
 {
     /**
      * Phone Number used to send SMS. Should be a registered Twilio phone number in E.164 format.
@@ -20,6 +20,15 @@ trait NotificationSmsChannelPropertiesTrait
     public function setSmsFrom(string $value): self
     {
         return $this->setAttribute(CNO::SMS_FROM, $value);
+    }
+
+    /**
+     * @param non-empty-string|non-empty-array<non-empty-string, non-empty-string> $text
+     * @return $this
+     */
+    public function setContents($text): self
+    {
+        return $this->setLocalizedText(CNO::CONTENTS, $text);
     }
 
     /**

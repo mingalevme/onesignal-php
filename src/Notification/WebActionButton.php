@@ -31,9 +31,11 @@ class WebActionButton extends ActionButton
 
     /**
      * @return array{id: non-empty-string, text: non-empty-string, icon: non-empty-string, url: non-empty-string}
+     * @psalm-suppress MoreSpecificReturnType
      */
     public function toOneSignalActionButton(): array
     {
+        /** @psalm-suppress LessSpecificReturnStatement */
         return parent::toOneSignalActionButton() + [
             'url' => $this->getLaunchUrl() ?: 'do_not_open',
         ];

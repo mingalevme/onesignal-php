@@ -8,17 +8,26 @@ use InvalidArgumentException;
 use Mingalevme\OneSignal\CreateNotificationOptions as CNO;
 
 /**
- * @mixin Notification
+ * @mixin AbstractNotification
  */
-trait NotificationPushChannelPropertiesTrait
+trait PushNotificationChannelPropertiesTrait
 {
     // Push Channel Properties / Push Notification Content
+
+    /**
+     * @param non-empty-string|non-empty-array<non-empty-string, non-empty-string> $text
+     * @return $this
+     */
+    public function setContents($text): self
+    {
+        return $this->setLocalizedText(CNO::CONTENTS, $text);
+    }
 
     /**
      * @param non-empty-string|non-empty-array<non-empty-string, non-empty-string> $title
      * @return $this
      */
-    public function setTitle($title): self
+    public function setHeadings($title): self
     {
         return $this->setLocalizedText(CNO::HEADINGS, $title);
     }
@@ -33,41 +42,50 @@ trait NotificationPushChannelPropertiesTrait
     }
 
     /**
-     * @param non-empty-string|non-empty-array<non-empty-string, non-empty-string> $text
+     * Use a template you set up on our dashboard.
+     *
+     * The template_id is the UUID found in the URL when viewing a template on our dashboard.
+     *
+     * Example: be4a8044-bbd6-11e4-a581-000c2940e62c
+     *
+     * @param non-empty-string $value
      * @return $this
      */
-    public function setText($text): self
+    public function setTemplateId(string $value): self
     {
-        return $this->setLocalizedText(CNO::CONTENTS, $text);
+        return $this->setAttribute(CNO::TEMPLATE_ID, $value);
     }
 
     /**
-     * @param non-empty-string $attributeName
-     * @param non-empty-string|non-empty-array<non-empty-string, non-empty-string> $text
-     * @return $this
-     */
-    protected function setLocalizedText(string $attributeName, $text): self
-    {
-        if (is_string($text)) {
-            return $this->setAttribute($attributeName, [
-                'en' => $text,
-            ]);
-        }
-
-        if (empty($text['en'])) {
-            throw new InvalidArgumentException('Invalid or missing default text of notification (content["en"])');
-        }
-
-        return $this->setAttribute($attributeName, $text);
-    }
-
-    /**
+     * Sending true wakes your app from background to run custom native code
+     *  (Apple interprets this as content-available=1).
+     *
+     * Note: Not applicable if the app is in the "force-quit" state (i.e app was swiped away).
+     * Omit the contents field to prevent displaying a visible notification.
+     *
      * @param bool $value
      * @return $this
      */
     public function setContentAvailable(bool $value): self
     {
         return $this->setAttribute(CNO::CONTENT_AVAILABLE, $value);
+    }
+
+    /**
+     *
+     * Always defaults to true and cannot be turned off.
+     *
+     * Allows tracking of notification receives and changing of the notification content in your app
+     *  before it is displayed. Triggers didReceive(_:withContentHandler:) on your UNNotificationServiceExtension:
+     *  https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension
+     *
+     * iOS 10+
+     *
+     * @return $this
+     */
+    public function setMutableContent(): self
+    {
+        return $this->setAttribute(CNO::MUTABLE_CONTENT, true);
     }
 
     /**
@@ -272,7 +290,7 @@ trait NotificationPushChannelPropertiesTrait
      *
      * Example: [
      *  {"id": "like-button", "text": "Like", "icon": "http://i.imgur.com/N8SN8ZS.png", "url": "https://yoursite.com"},
-     *  {"id": "read-more-button", "text": "Read more", "icon": "http://i.imgur.com/MIxJp1L.png", "url": "https://yoursite.com"}
+     *  {"id": "read-more-button", "text": "Read more", "icon": "http://i.com/MIxJp1L.png", "url": "https://site.com"}
      * ]
      *
      * @param non-empty-list<WebActionButton> $value
@@ -361,21 +379,6 @@ trait NotificationPushChannelPropertiesTrait
     public function setHuaweiExistingChannelId(string $value): self
     {
         return $this->setAttribute(CNO::HUAWEI_EXISTING_CHANNEL_ID, $value);
-    }
-
-    /**
-     * @deprecated Deprecated, this field doesn't work on Android 12+
-     *
-     * Allowing setting a background image for the notification. This is a JSON object containing the following keys.
-     * See our Background Image documentation for image sizes:
-     *  https://documentation.onesignal.com/docs/android-customizations#section-background-images
-     *
-     * @param array{image: non-empty-string, headings_color: non-empty-string, contents_color: non-empty-string} $value
-     * @return $this
-     */
-    public function setAndroidBackgroundLayout(array $value): self
-    {
-        return $this->setAttribute(CNO::ANDROID_BACKGROUND_LAYOUT, $value);
     }
 
     /**

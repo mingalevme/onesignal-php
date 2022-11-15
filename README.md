@@ -2,13 +2,20 @@
 
 [![quality](https://github.com/mingalevme/onesignal-php/actions/workflows/quality.yml/badge.svg)](https://github.com/mingalevme/onesignal-php/actions)
 [![codecov](https://codecov.io/gh/mingalevme/onesignal-php/branch/feature/v2/graph/badge.svg?token=JelfrDfOkJ)](https://codecov.io/gh/mingalevme/onesignal)
-[![version](https://img.shields.io/packagist/v/mingalevme/onesignal)](https://packagist.org/packages/mingalevme/onesignal)
+[![version](https://img.shields.io/packagist/v/mingalevme/onesignal?include_prereleases)](https://packagist.org/packages/mingalevme/onesignal)
 [![license](https://img.shields.io/packagist/l/mingalevme/onesignal)](https://packagist.org/packages/mingalevme/onesignal)
 
 Almost zero dependencies - only some PSRs and JSON-extension:
+- PHP 7.4+
 - PSR-17: HTTP Factories
 - PSR-18: HTTP Client
 - JSON-extension (As of PHP 8.0.0, the JSON extension is a core PHP extension, so it is always enabled)
+
+## Composer
+
+```shell
+composer require mingalevme/onesignal:^2.0.0-alpha
+```
 
 ## Examples
 

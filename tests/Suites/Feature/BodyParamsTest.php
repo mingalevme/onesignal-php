@@ -12,6 +12,7 @@ class BodyParamsTest extends AbstractFeatureTestCase
     public function testBodyParams(): void
     {
         $notification = $this->createNotification()
+            ->setIncludedSegments('All')
             ->setName('internal-campaign-name')
             ->setExternalId('external-id')
             ->setSendAfter(new DateTime('2000-01-01T00:00:00+00:00'))

@@ -11,8 +11,6 @@ final class CreateClientOptions
     /** @var non-empty-string */
     private string $restAPIKey;
     /** @var non-empty-string|null */
-    private ?string $defaultSegment = null;
-    /** @var non-empty-string|null */
     private ?string $baseUrl = null;
 
     /**
@@ -49,25 +47,6 @@ final class CreateClientOptions
     public function getRestAPIKey(): string
     {
         return $this->restAPIKey;
-    }
-
-    /**
-     * @return non-empty-string|null
-     */
-    public function getDefaultSegment(): ?string
-    {
-        return $this->defaultSegment;
-    }
-
-    /**
-     * @param non-empty-string|null $defaultSegment
-     * @return static
-     */
-    public function withDefaultSegment(?string $defaultSegment): self
-    {
-        $self = clone $this;
-        $self->defaultSegment = $defaultSegment;
-        return $self;
     }
 
     /**

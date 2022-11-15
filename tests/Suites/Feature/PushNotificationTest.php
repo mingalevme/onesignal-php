@@ -16,7 +16,6 @@ class PushNotificationTest extends AbstractFeatureTestCase
         $data = $notification->toOneSignalData();
         self::assertSame([
             'contents' => ['en' => 'contents-en'],
-            'included_segments' => ['All'],
         ], $data);
     }
 
@@ -32,7 +31,6 @@ class PushNotificationTest extends AbstractFeatureTestCase
                 [
                     'foo' => 'bar',
                 ],
-            'included_segments' => ['All'],
         ], $data);
     }
 
@@ -42,7 +40,6 @@ class PushNotificationTest extends AbstractFeatureTestCase
         $data = $notification->toOneSignalData();
         self::assertSame([
             'template_id' => 'be4a8044-bbd6-11e4-a581-000c2940e62c',
-            'included_segments' => ['All'],
         ], $data);
     }
 

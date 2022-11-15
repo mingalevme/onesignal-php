@@ -20,7 +20,6 @@ class SmsNotificationTest extends AbstractFeatureTestCase
             ],
             'sms_from' => 'sms-from',
             'sms_media_urls' => ['sms-media-url'],
-            'included_segments' => ['All'],
         ];
         self::assertNotificationHasAttributes($attributes, $notification, true);
     }

@@ -14,7 +14,6 @@ class EmailNotificationTest extends AbstractFeatureTestCase
         $attributes = [
             'email_subject' => 'subject',
             'email_body' => 'body',
-            'included_segments' => ['All'],
         ];
         self::assertNotificationHasAttributes($attributes, $notification, true);
     }
@@ -25,7 +24,6 @@ class EmailNotificationTest extends AbstractFeatureTestCase
         $attributes = [
             'email_subject' => 'subject',
             'template_id' => 'template-id',
-            'included_segments' => ['All'],
         ];
         self::assertNotificationHasAttributes($attributes, $notification, true);
     }
@@ -44,7 +42,6 @@ class EmailNotificationTest extends AbstractFeatureTestCase
             'email_from_address' => 'from@example.com',
             'email_preheader' => 'preheader',
             'disable_email_click_tracking' => true,
-            'included_segments' => ['All'],
         ];
         self::assertNotificationHasAttributes($attributes, $notification, true);
     }

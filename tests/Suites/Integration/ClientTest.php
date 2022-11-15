@@ -5,10 +5,10 @@ namespace Mingalevme\Tests\OneSignal\Suites\Integration;
 use Mingalevme\OneSignal\Client;
 use Mingalevme\OneSignal\ClientFactory;
 use Mingalevme\OneSignal\CreateClientOptions;
-use Mingalevme\OneSignal\CreateNotificationOptions;
-use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
+use Mingalevme\OneSignal\CreateNotificationOptions as CNO;
 use Mingalevme\OneSignal\Exception\ClientException;
 use Mingalevme\OneSignal\Exception\OneSignalException;
+use Mingalevme\OneSignal\Notification\PushNotification;
 use Mingalevme\Tests\OneSignal\TestCase;
 use RuntimeException;
 
@@ -35,12 +35,11 @@ class ClientTest extends TestCase
 
     public function testSendingToDefaultSegment(): void
     {
-        $segment = $this->getStrEnv('ONE_SIGNAL_TEST_DEFAULT_SEGMENT');
-        $client = $this->getClient();
-        if ($segment) {
-            $client->setDefaultSegment($segment);
-        }
-        $result = $client->createNotification('test');
+        $segment = $this->getStrEnv('ONE_SIGNAL_TEST_DEFAULT_SEGMENT') ?: CNO::SEGMENTS_ALL;
+        $result = $this->getClient()->createNotification(
+            PushNotification::createContentsNotification('test')
+                ->setIncludedSegments($segment),
+        );
         self::assertNotEmpty($result->getNotificationId());
         self::assertGreaterThan(1, $result->getTotalNumberOfRecipients());
     }
@@ -51,42 +50,37 @@ class ClientTest extends TestCase
         if (empty($playerId)) {
             self::markTestSkipped('Env var ONE_SIGNAL_TEST_PLAYER_ID is not set');
         }
-        $result = $this->getClient()->createNotification('test', null, null, [
-            CreateNotificationOptions::INCLUDE_PLAYER_IDS => [
-                $playerId,
-            ],
-        ]);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludePlayerIds($playerId);
+        $result = $this->getClient()->createNotification($notification);
         self::assertNotEmpty($result->getNotificationId());
         self::assertSame(1, $result->getTotalNumberOfRecipients());
     }
 
     public function testInvalidPlayerIdFormat(): void
     {
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludePlayerIds('invalid-player-id');
         try {
-            $this->getClient()->createNotification('test', null, null, [
-                CreateNotificationOptions::INCLUDE_PLAYER_IDS => [
-                    'invalid-player-id',
-                ],
-            ]);
+            $this->getClient()->createNotification($notification);
             self::fail('Exception has not been thrown');
         } catch (ClientException $e) {
             self::assertSame(
                 'Incorrect player_id format in include_player_ids (not a valid UUID): invalid-player-id',
-                $e->getMessage()
+                $e->getMessage(),
             );
         }
     }
 
     public function testAllIncludedPlayersAreNotSubscribed(): void
     {
-        try {
-            $this->getClient()->createNotification('test', null, [
-                '_foo' => '_bar',
-            ]);
-            self::fail('Exception has not been thrown');
-        } catch (AllIncludedPlayersAreNotSubscribed $e) {
-            self::assertTrue(true);
-        }
+        $notification = PushNotification::createContentsNotification('test')
+            ->addFilterTag('_foo', '=', '_bar');
+        $result = $this->getClient()->createNotification($notification);
+        self::assertSame(null, $result->getNotificationId());
+        self::assertSame(0, $result->getTotalNumberOfRecipients());
+        self::assertCount(1, $result->getErrors() ?: []);
+        self::assertSame('All included players are not subscribed', $result->getErrors()[0] ?? null);
     }
 
     public function testInvalidCredentials(): void
@@ -94,11 +88,13 @@ class ClientTest extends TestCase
         $client = $this->getClientFactory()->create(
             CreateClientOptions::new(
                 '67415017-24e2-4a6c-afc9-a14e7958c4db',
-                'Njk4YTE1YWUtZjhlMi00Yzk2LWExZjAtNTg5ZDhiZGRmZGUx'
-            )
+                'Njk4YTE1YWUtZjhlMi00Yzk2LWExZjAtNTg5ZDhiZGRmZGUx',
+            ),
         );
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludePlayerIds(CNO::SEGMENTS_ALL);
         try {
-            $client->createNotification('test');
+            $client->createNotification($notification);
             self::fail('Exception has not been thrown');
         } catch (OneSignalException $e) {
             self::assertInstanceOf(ClientException::class, $e);

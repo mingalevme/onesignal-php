@@ -10,9 +10,6 @@ Almost zero dependencies - only some PSRs and JSON-extension:
 - PSR-18: HTTP Client
 - JSON-extension (As of PHP 8.0.0, the JSON extension is a core PHP extension, so it is always enabled)
 
-> **NOTE**: In case of zero recipients `createNotification`-method throws `AllIncludedPlayersAreNotSubscribed`-exception.
-> It's because OneSignal does not create a notification object in that case.
-
 ## Examples
 
 ### Example (DI Container)
@@ -59,6 +56,7 @@ declare(strict_types=1);
 
 use Mingalevme\OneSignal\ClientInterface;
 use Mingalevme\OneSignal\CreateNotificationOptions;
+use Mingalevme\OneSignal\Notification\PushNotification;
 
 class NotifySubscribersOnPostCreatedEventHandler
 {
@@ -76,15 +74,16 @@ class NotifySubscribersOnPostCreatedEventHandler
         $post = $event->getPost();
         /** @var string[] $subscriberIds */
         $subscriberIds = $this->repo->getSubscriberIdsOfAuthor($post->getAuthorId());
-        $this->client->createNotification($post->getTitle(), [
-            'post_id' => $post->getId(),
-        ], null, [
-            CreateNotificationOptions::INCLUDE_EXTERNAL_USER_IDS => $subscriberIds,
-            CreateNotificationOptions::HEADINGS => [
+        $notification = PushNotification::createContentsNotification($post->getTitle())
+            ->setHeadings([
                 'en' => $post->getAuthorDisplayName(),
-            ],
-            CreateNotificationOptions::EXTERNAL_ID => "post-{$post->getId()}",
-        ]);
+            ])
+            ->setData([
+                'post_id' => $post->getId(),
+            ])
+            ->setExternalId("post-{$post->getId()}")
+            ->setIncludeExternalUserIds($subscriberIds);
+        $this->client->createNotification($notification);
     }
 }
 ```
@@ -100,6 +99,7 @@ use GuzzleHttp\Psr7\HttpFactory;
 use Mingalevme\OneSignal\Client;
 use Mingalevme\OneSignal\CreateClientOptions;
 use Mingalevme\OneSignal\CreateNotificationOptions;
+use Mingalevme\OneSignal\Notification\PushNotification;
 
 $appId = 'my-app-id';
 $restApiKey = 'my-rest-api-key';
@@ -108,28 +108,18 @@ $psrHttpClient = new \GuzzleHttp\Client();
 $psr7Factory = new HttpFactory();
 
 $client = new Client(CreateClientOptions::new($appId, $restAPIKey), $psrHttpClient, $psr7Factory, $psr7Factory);
-$result = $client->createNotification('text', [
-    'type' => 'my-notification-type',
-    'data' => 'some-extra-data',
-], [
-    'tag1' => 'value1',
-    'tag2' => 'value2',
-], [
-    // ...
-    CreateNotificationOptions::SMALL_ICON => 'push_icon',
-    CreateNotificationOptions::TTL => 3600 * 3,
-    CreateNotificationOptions::IOS_CATEGORY => 'my-ios-category',
-    CreateNotificationOptions::EXTERNAL_ID => 'custom-notification-id',
-    // ...
-    CreateNotificationOptions::TAGS => [ // This will be merged with 'tag1' => 'value1' and 'tag2' => 'value2'
-        [
-            'key' => 'tag3',
-            'relation' => '>',
-            'value' => 'value3',
-        ],
-    ]
-    // ...
-]);
+$notification = PushNotification::createContentsNotification('text')
+    ->setData([
+        'type' => 'my-notification-type',
+        'data' => 'some-extra-data',
+    ])
+    ->addFilterTagExists('tag1')
+    ->addFilterTag('tag2', '>', 'value2')
+    ->setSmallIcon('push_icon')
+    ->setTtl(3600 * 3)
+    ->setIosCategory($'my-ios-category')
+    ->setExternalId('custom-notification-id');
+$result = $client->createNotification($notification);
 
 echo <<<END
 Notification has been successfully sent to OneSignal: #{$result->getNotificationId()}.

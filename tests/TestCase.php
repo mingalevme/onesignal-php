@@ -5,6 +5,7 @@ namespace Mingalevme\Tests\OneSignal;
 use Dotenv\Dotenv;
 use GuzzleHttp\Client as GuzzleHttpClient;
 use GuzzleHttp\Psr7\HttpFactory;
+use GuzzleHttp\RequestOptions;
 use Mingalevme\OneSignal\ClientFactory;
 use Mingalevme\OneSignal\ClientFactoryInterface;
 use Psr\Http\Client\ClientInterface as PsrHttpClient;
@@ -52,7 +53,9 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
     protected function getPsrHttpClient(): PsrHttpClient
     {
-        return new GuzzleHttpClient();
+        return new GuzzleHttpClient([
+            RequestOptions::TIMEOUT => 5.0,
+        ]);
     }
 
     protected function getPsrRequestFactory(): RequestFactoryInterface

@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace Mingalevme\Tests\OneSignal\Suites\Feature;
 
-use InvalidArgumentException;
 use Mingalevme\OneSignal\Client;
 use Mingalevme\OneSignal\CreateClientOptions;
-use Mingalevme\OneSignal\CreateNotificationOptions as CNO;
-use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\ClientException;
 use Mingalevme\OneSignal\Exception\NetworkException;
 use Mingalevme\OneSignal\Exception\OneSignalException;
@@ -17,6 +14,7 @@ use Mingalevme\OneSignal\Exception\ServerException;
 use Mingalevme\OneSignal\Exception\ServiceUnavailableException;
 use Mingalevme\OneSignal\Exception\TransferException;
 use Mingalevme\OneSignal\Exception\UnexpectedResponseFormatException;
+use Mingalevme\OneSignal\Notification\PushNotification;
 use Mingalevme\Tests\OneSignal\Helpers\StaticResponsePsrHttpClient;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
@@ -25,7 +23,6 @@ use Psr\Http\Client\RequestExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
-use Throwable;
 
 /**
  * @see Client::createNotification()
@@ -61,27 +58,13 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             'recipients' => 1,
         ];
         $client = $this->setUpClient($responseBodyData);
-        $result = $client->createNotification('title', [
-            'foo' => 'bar',
-        ], [
-            'tag1' => 'value1',
-        ], [
-            CNO::FILTERS => [
-                [
-                    CNO::FILTERS_FIELD => CNO::FILTERS_TAG,
-                    CNO::FILTERS_KEY => 'tag2',
-                    CNO::FILTERS_RELATION => '>',
-                    CNO::FILTERS_VALUE => '1',
-                ],
-            ],
-            CNO::TAGS => [
-                [
-                    CNO::FILTERS_KEY => 'tag3',
-                    CNO::FILTERS_RELATION => '>=',
-                    CNO::FILTERS_VALUE => '1',
-                ],
-            ],
-        ]);
+        $notification = PushNotification::createContentsNotification('contents-en')
+            ->setData([
+                'foo' => 'bar',
+            ])
+            ->addFilterTag('tag1', '=', 'value1')
+            ->addFilterTag('tag2', '>', '1');
+        $result = $client->createNotification($notification);
         //
         self::assertSame('foo-bar', $result->getNotificationId());
         self::assertSame(1, $result->getTotalNumberOfRecipients());
@@ -93,7 +76,7 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         $requestBodyData = $this->jsonDecode($request->getBody()->getContents());
         self::assertSame(self::APP_ID, $requestBodyData['app_id'] ?? null);
         self::assertSame([
-            'en' => 'title',
+            'en' => 'contents-en',
         ], $requestBodyData['contents'] ?? null);
         self::assertSame([
             'foo' => 'bar',
@@ -101,23 +84,32 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         self::assertSame([
             [
                 'field' => 'tag',
-                'key' => 'tag2',
-                'relation' => '>',
-                'value' => '1',
-            ],
-            [
-                'field' => 'tag',
-                'key' => 'tag1',
                 'relation' => '=',
+                'key' => 'tag1',
                 'value' => 'value1',
             ],
             [
                 'field' => 'tag',
-                'key' => 'tag3',
-                'relation' => '>=',
+                'relation' => '>',
+                'key' => 'tag2',
                 'value' => '1',
             ],
         ], $requestBodyData['filters'] ?? null);
+    }
+
+    public function testItShouldReturnExternalId(): void
+    {
+        $responseBodyData = [
+            'id' => '',
+            'recipients' => 0,
+            'external_id' => 'external-id',
+        ];
+        $client = $this->setUpClient($responseBodyData);
+        $notification = PushNotification::createContentsNotification('contents-en')
+            ->setIncludedSegments('All')
+            ->setExternalId('external-id');
+        $result = $client->createNotification($notification);
+        self::assertSame('external-id', $result->getExternalId());
     }
 
     public function testItShouldSendNotificationWithMultipleTitles(): void
@@ -127,10 +119,11 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             'recipients' => 1,
         ];
         $client = $this->setUpClient($responseBodyData);
-        $client->createNotification([
+        $notification = PushNotification::createContentsNotification([
             'en' => 'en-title',
             'es' => 'es-title',
-        ]);
+        ])->setIncludedSegments('All');
+        $client->createNotification($notification);
         //
         self::assertCount(1, $this->getStaticResponsePsrHttpClient()->getRequests());
         $request = $this->getStaticResponsePsrHttpClient()->getLastRequest();
@@ -140,18 +133,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             'en' => 'en-title',
             'es' => 'es-title',
         ], $requestBodyData['contents'] ?? null);
-    }
-
-    public function testItShouldNotSendNotificationIfNoTitleNoContent(): void
-    {
-        $responseBodyData = [];
-        $client = $this->setUpClient($responseBodyData);
-        try {
-            $client->createNotification();
-            $this->exceptionHasNotBeenThrown();
-        } catch (Throwable $e) {
-            self::assertInstanceOf(InvalidArgumentException::class, $e);
-        }
     }
 
     public function testItShouldNotSendNotificationIfNoRecipients(): void
@@ -164,12 +145,13 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             ],
         ];
         $client = $this->setUpClient($responseBodyData);
-        try {
-            $client->createNotification('title');
-            $this->exceptionHasNotBeenThrown();
-        } catch (OneSignalException $e) {
-            self::assertInstanceOf(AllIncludedPlayersAreNotSubscribed::class, $e);
-        }
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
+        $result = $client->createNotification($notification);
+        self::assertSame(null, $result->getNotificationId());
+        self::assertSame(0, $result->getTotalNumberOfRecipients());
+        self::assertCount(1, $result->getErrors() ?: []);
+        self::assertSame('All included players are not subscribed', $result->getErrors()[0] ?? null);
     }
 
     public function testItShouldThrowErrorIfNotificationIdIsMissing(): void
@@ -179,8 +161,10 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             'recipients' => 1,
         ];
         $client = $this->setUpClient($responseBodyData);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('title');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(UnexpectedResponseFormatException::class, $e);
@@ -193,8 +177,10 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             'id' => 'id',
         ];
         $client = $this->setUpClient($responseBodyData);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('title');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(UnexpectedResponseFormatException::class, $e);
@@ -212,10 +198,12 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         };
         $this->psrHttpClient = $psrHttpClient;
         $client = $this->getClientFactory()->create(
-            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY)
+            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY),
         );
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('test');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(TransferException::class, $e);
@@ -237,10 +225,12 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         };
         $this->psrHttpClient = $psrHttpClient;
         $client = $this->getClientFactory()->create(
-            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY)
+            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY),
         );
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('test');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(NetworkException::class, $e);
@@ -262,10 +252,12 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         };
         $this->psrHttpClient = $psrHttpClient;
         $client = $this->getClientFactory()->create(
-            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY)
+            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY),
         );
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('test');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(RequestException::class, $e);
@@ -276,8 +268,10 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     {
         $responseBodyData = [];
         $client = $this->setUpClient($responseBodyData, 503);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('title');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(ServiceUnavailableException::class, $e);
@@ -288,8 +282,10 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     {
         $responseBodyData = [];
         $client = $this->setUpClient($responseBodyData, 500);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('title');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(ServerException::class, $e);
@@ -300,8 +296,10 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     {
         $responseBodyData = null;
         $client = $this->setUpClient($responseBodyData);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('title');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(ServerException::class, $e);
@@ -312,8 +310,10 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     {
         $responseBodyData = 'aaa aaa';
         $client = $this->setUpClient($responseBodyData);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('title');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(ServerException::class, $e);
@@ -326,8 +326,10 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             'errors' => [0],
         ];
         $client = $this->setUpClient($responseBodyData);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('title');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(UnexpectedResponseFormatException::class, $e);
@@ -342,8 +344,10 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             ],
         ];
         $client = $this->setUpClient($responseBodyData, 400);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('title');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(ClientException::class, $e);
@@ -357,8 +361,10 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             'errors' => [],
         ];
         $client = $this->setUpClient($responseBodyData, 400);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
         try {
-            $client->createNotification('title');
+            $client->createNotification($notification);
             $this->exceptionHasNotBeenThrown();
         } catch (OneSignalException $e) {
             self::assertInstanceOf(UnexpectedResponseFormatException::class, $e);
@@ -381,7 +387,7 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         $psrHttpClient = new StaticResponsePsrHttpClient($response);
         $this->psrHttpClient = $psrHttpClient;
         $client = $this->getClientFactory()->create(
-            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY)
+            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY),
         );
         if (!is_a($client, Client::class)) {
             throw new RuntimeException();

@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Mingalevme\OneSignal;
 
-use InvalidArgumentException;
-use Mingalevme\OneSignal\CreateNotificationOptions as CNO;
-use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\ClientException;
 use Mingalevme\OneSignal\Exception\NetworkException;
 use Mingalevme\OneSignal\Exception\RequestException;
@@ -14,6 +11,7 @@ use Mingalevme\OneSignal\Exception\ServerException;
 use Mingalevme\OneSignal\Exception\ServiceUnavailableException;
 use Mingalevme\OneSignal\Exception\TransferException;
 use Mingalevme\OneSignal\Exception\UnexpectedResponseFormatException;
+use Mingalevme\OneSignal\Notification\NotificationInterface;
 use Mingalevme\Tests\OneSignal\Suites\Integration\ClientTest;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface as PsrHttpClient;
@@ -51,9 +49,6 @@ class Client implements ClientInterface
     protected PsrStreamFactory $psrStreamFactory;
 
     /** @var non-empty-string */
-    protected string $defaultSegment;
-
-    /** @var non-empty-string */
     protected string $baseUrl;
 
     /**
@@ -70,152 +65,76 @@ class Client implements ClientInterface
     ) {
         $this->appId = $createClientOptions->getAppId();
         $this->restAPIKey = $createClientOptions->getRestAPIKey();
-        $this->defaultSegment = $createClientOptions->getDefaultSegment() ?: CNO::SEGMENTS_SUBSCRIBED_USERS;
         $this->baseUrl = $createClientOptions->getBaseUrl() ?: self::BASE_URL;
         $this->psrHttpClient = $psrHttpClient;
         $this->psrRequestFactory = $psrRequestFactory;
         $this->psrStreamFactory = $psrStreamFactory;
     }
 
-    /**
-     * @param non-empty-string $defaultSegment
-     * @return static
-     */
-    public function setDefaultSegment(string $defaultSegment): self
+    public function createNotification(NotificationInterface $notification): CreateNotificationResult
     {
-        $this->defaultSegment = $defaultSegment;
-        return $this;
-    }
-
-    public function createNotification(
-        $title = null,
-        array $payload = null,
-        array $whereTags = null,
-        array $extra = null
-    ): CreateMessageResult {
-        $data = [];
-
-        /** @var array<non-empty-string, non-empty-string> $content */
-        $content = [];
-
-        if (is_string($title)) {
-            $content['en'] = $title;
-        } elseif (is_array($title)) {
-            $content = $title;
-        }
-
-        if (count($content) > 0) {
-            $data[CNO::CONTENTS] = $content;
-        }
-
-        if ($payload) {
-            $data[CNO::DATA] = $payload;
-        }
-        if ($extra) {
-            $data = array_merge($data, $extra);
-        }
-
-        /** @var array{
-         *     contents?: array<non-empty-string, non-empty-string>|array<string, mixed>,
-         *     data?: array,
-         *     tags?: array{key: non-empty-string, relation: non-empty-string, value: string}[],
-         *     filters?: array<string, mixed>[]
-         * }|array<string, mixed> $data
-         */
-
-        if (empty($data[CNO::CONTENTS]) && empty($data[CNO::CONTENT_AVAILABLE]) && empty($data[CNO::TEMPLATE_ID])) {
-            throw new InvalidArgumentException(
-                'Title is required unless content_available=true or template_id is set'
-            );
-        }
-
-        // English must be included in the hash (https://documentation.onesignal.com/reference/push-channel-properties)
-        if (!empty($data[CNO::CONTENTS])) {
-            /** @var array<string, mixed> $contents */
-            $contents = $data[CNO::CONTENTS];
-            /** @psalm-suppress MixedArgument */
-            if (empty($contents['en']) || !is_string($contents['en']) || !trim($contents['en'])) {
-                throw new InvalidArgumentException('Invalid or missing default text of notification (content["en"])');
-            }
-        }
-
-        if (empty($data[CNO::FILTERS])) {
-            $data[CNO::FILTERS] = [];
-        }
-
-        /** @var array<string, array{key: string, relation: string, value: string}> $tags */
-        $tags = [];
-
-        foreach ((array)$whereTags as $key => $value) {
-            $tags["$key=$value"] = [
-                CNO::FILTERS_KEY => $key,
-                CNO::FILTERS_RELATION => '=',
-                CNO::FILTERS_VALUE => $value,
+        $data = $notification->toOneSignalData() + [
+                self::APP_ID => $this->appId,
             ];
-        }
-
-        /** @var array{key: string, relation: string, value: string}[] $tags */
-        $tags = array_values($tags);
-
-        if ($data[CNO::TAGS] ?? null) {
-            /**
-             * @psalm-suppress MixedArgument
-             * @phpstan-ignore-next-line
-             */
-            $tags = array_merge($tags, $data[CNO::TAGS]);
-        }
-
-        unset($data[CNO::TAGS]);
-
-        /** @var array{key: string, relation: string, value: string} $tag */
-        foreach ($tags as $tag) {
-            /**
-             * @psalm-suppress MixedArgument
-             * @psalm-suppress MixedArrayAssignment
-             * @phpstan-ignore-next-line
-             */
-            $data[CNO::FILTERS][] = [
-                    CNO::FILTERS_FIELD => CNO::FILTERS_TAG,
-                ] + $tag;
-        }
-
-        // You must include which players, segments, or tags you wish to send this notification to
-        if (
-            empty($data[CNO::INCLUDE_PLAYER_IDS])
-            && empty($data[CNO::INCLUDED_SEGMENTS])
-            && empty($data[CNO::FILTERS])
-        ) {
-            $data[CNO::INCLUDED_SEGMENTS] = [$this->defaultSegment];
-        }
-
-        $data[self::APP_ID] = $this->appId;
 
         $url = "$this->baseUrl/notifications";
 
         $response = $this->makePostRequest($url, $data, $request);
 
-        /** @var array{id?: ?string, recipients?: ?int, errors?: ?string[]} $responseData */
+        /** @var array{id?: ?string, recipients?: ?int, errors?: ?string[], external_id?: ?non-empty-string} $responseData */
         $responseData = $this->parseResponse($request, $response);
 
-        if (isset($responseData['recipients']) && $responseData['recipients'] === 0) {
-            throw new AllIncludedPlayersAreNotSubscribed($request, $response);
+        /** @var int<0, max>|mixed|null $recipients */
+        $recipients = $responseData['recipients'] ?? null;
+
+        if ($recipients === null) {
+            $recipients = 0;
+        } elseif (!is_int($recipients) || $recipients < 0) {
+            throw new UnexpectedResponseFormatException($request, $response, 'Invalid value of recipients');
         }
 
         /** @var non-empty-string|mixed|null $id */
         $id = $responseData['id'] ?? null;
 
-        if (!is_string($id) || empty($id)) {
+        if (empty($id)) {
+            $id = null;
+        }
+
+        if ($recipients > 0 && empty($id)) {
             throw new UnexpectedResponseFormatException($request, $response, 'Missing notification id');
         }
 
-        /** @var mixed|int|null $recipients */
-        $recipients = $responseData['recipients'] ?? null;
-
-        if (!$recipients || !is_int($recipients) || $recipients < 1) {
-            throw new UnexpectedResponseFormatException($request, $response, 'Invalid value of recipients');
+        if (!empty($id) && !is_string($id)) {
+            throw new UnexpectedResponseFormatException($request, $response, 'Invalid notification id');
         }
 
-        return new CreateMessageResult($id, $recipients, $request, $response);
+        if (!empty($id) && empty($recipients)) {
+            throw new UnexpectedResponseFormatException($request, $response, 'Missing recipients');
+        }
+
+        /** @var mixed|null $externalId */
+        $externalId = $responseData['external_id'] ?? null;
+
+        if (empty($externalId)) {
+            $externalId = null;
+        } elseif (!is_string($externalId)) {
+            throw new UnexpectedResponseFormatException($request, $response, 'Invalid value of external_id');
+        }
+
+        /** @var non-empty-list<non-empty-string>|null|mixed $errors */
+        $errors = $responseData['errors'] ?? null;
+
+        if (empty($errors)) {
+            $errors = null;
+        } elseif (!is_array($errors)) {
+            throw new UnexpectedResponseFormatException($request, $response, 'Invalid value of errors');
+        }
+
+        /**
+         * @psalm-suppress ArgumentTypeCoercion
+         * @psalm-suppress MixedArgumentTypeCoercion
+         */
+        return new CreateNotificationResult($id, $recipients, $externalId, $errors, $request, $response);
     }
 
     /**

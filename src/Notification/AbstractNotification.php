@@ -38,10 +38,6 @@ abstract class AbstractNotification implements NotificationInterface
             throw new InvalidArgumentException('Notification cannot be empty');
         }
 
-        if (!$this->isTargetSet) {
-            $data[CNO::INCLUDED_SEGMENTS] = [CNO::SEGMENTS_ALL];
-        }
-
         return $data;
     }
 
@@ -325,10 +321,7 @@ abstract class AbstractNotification implements NotificationInterface
      */
     public function addFilterLanguageEquals(string $value): self
     {
-        return $this->addFilter(CNO::FILTERS_LANGUAGE, [
-            CNO::FILTERS_RELATION => '=',
-            CNO::FILTERS_VALUE => $value,
-        ]);
+        return $this->addFilterLanguage('=', $value);
     }
 
     /**
@@ -338,10 +331,7 @@ abstract class AbstractNotification implements NotificationInterface
      */
     public function addFilterLanguageNotEquals(string $value): self
     {
-        return $this->addFilter(CNO::FILTERS_LANGUAGE, [
-            CNO::FILTERS_RELATION => '!=',
-            CNO::FILTERS_VALUE => $value,
-        ]);
+        return $this->addFilterLanguage('!=', $value);
     }
 
     /**

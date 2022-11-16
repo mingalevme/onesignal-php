@@ -1,7 +1,7 @@
 # Simple OneSignal PHP Client
 
 [![quality](https://github.com/mingalevme/onesignal-php/actions/workflows/quality.yml/badge.svg)](https://github.com/mingalevme/onesignal-php/actions)
-[![codecov](https://codecov.io/gh/mingalevme/onesignal-php/branch/feature/v2/graph/badge.svg?token=JelfrDfOkJ)](https://codecov.io/gh/mingalevme/onesignal-php)
+[![codecov](https://codecov.io/gh/mingalevme/onesignal-php/branch/master/graph/badge.svg?token=JelfrDfOkJ)](https://codecov.io/gh/mingalevme/onesignal-php)
 [![version](https://img.shields.io/packagist/v/mingalevme/onesignal?include_prereleases)](https://packagist.org/packages/mingalevme/onesignal)
 [![license](https://img.shields.io/packagist/l/mingalevme/onesignal)](https://packagist.org/packages/mingalevme/onesignal)
 

@@ -5,11 +5,17 @@
 [![version](https://img.shields.io/packagist/v/mingalevme/onesignal?include_prereleases)](https://packagist.org/packages/mingalevme/onesignal)
 [![license](https://img.shields.io/packagist/l/mingalevme/onesignal)](https://packagist.org/packages/mingalevme/onesignal)
 
-Really simple and well tested OneSignal client (creating notifications only) with almost zero dependencies - only some PSRs and JSON-extension:
+Really simple and well tested OneSignal client (creating notifications only) with PSR-only dependencies:
 - PHP 7.4+
 - PSR-17: HTTP Factories
 - PSR-18: HTTP Client
-- JSON-extension (As of PHP 8.0.0, the JSON extension is a core PHP extension, so it is always enabled)
+- JSON-extension (as of PHP 8.0.0, the JSON-extension is a core PHP extension, so it is always available)
+
+More about code quality:
+- **95%+** of code are covered with tests
+- project uses **Psalm** and **PHPStan** at **max** levels 
+- `composer audit` on every commit by CI/CD
+- **PHP_CodeSniffer**
 
 ## Composer
 
@@ -55,6 +61,10 @@ class AppServiceProvider
 ```
 
 Some application logic
+
+> **Note**
+> It's recommended to use some app-level interface for notification sender, e.g. `MyAppNotificationSenderInterface`,
+> instead of `ClientInterface`/`CreateNotificationInterface`. 
 
 ```php
 <?php

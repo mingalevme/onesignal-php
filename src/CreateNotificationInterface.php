@@ -14,5 +14,5 @@ interface CreateNotificationInterface
      * @return CreateNotificationResult
      * @throws OneSignalException
      */
-    public function createNotification(NotificationInterface $notification): CreateNotificationResult;
+    public function createNotification(NotificationInterface $notification): CreateNotificationResultInterface;
 }

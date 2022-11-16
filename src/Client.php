@@ -81,7 +81,7 @@ class Client implements ClientInterface
 
         $response = $this->makePostRequest($url, $data, $request);
 
-        /** @var array{id?: ?string, recipients?: ?int, errors?: ?string[], external_id?: ?non-empty-string} $responseData */
+        /** @var array{id?: ?string, recipients?: ?int, errors?: list<string>|array<string, mixed>, external_id?: ?non-empty-string} $responseData */
         $responseData = $this->parseResponse($request, $response);
 
         /** @var int<0, max>|mixed|null $recipients */
@@ -92,6 +92,8 @@ class Client implements ClientInterface
         } elseif (!is_int($recipients) || $recipients < 0) {
             throw new UnexpectedResponseFormatException($request, $response, 'Invalid value of recipients');
         }
+
+        /** @var int<0, max> $recipients */
 
         /** @var non-empty-string|mixed|null $id */
         $id = $responseData['id'] ?? null;
@@ -121,7 +123,7 @@ class Client implements ClientInterface
             throw new UnexpectedResponseFormatException($request, $response, 'Invalid value of external_id');
         }
 
-        /** @var non-empty-list<non-empty-string>|null|mixed $errors */
+        /** @var mixed|null $errors */
         $errors = $responseData['errors'] ?? null;
 
         if (empty($errors)) {
@@ -130,11 +132,51 @@ class Client implements ClientInterface
             throw new UnexpectedResponseFormatException($request, $response, 'Invalid value of errors');
         }
 
-        /**
-         * @psalm-suppress ArgumentTypeCoercion
-         * @psalm-suppress MixedArgumentTypeCoercion
-         */
-        return new CreateNotificationResult($id, $recipients, $externalId, $errors, $request, $response);
+        /** @var list<non-empty-string>|null $invalidExternalUserIds */
+        $invalidExternalUserIds = $errors['invalid_external_user_ids'] ?? null;
+
+        /** @var list<non-empty-string>|null $invalidPhoneNumbers */
+        $invalidPhoneNumbers = $errors['invalid_phone_numbers'] ?? null;
+
+        /** @var non-empty-list<non-empty-string>|null $errorList */
+        $errorList = is_string($errors[0] ?? null)
+            ? $errors
+            : null;
+
+        if ($id && $errorList) {
+            throw new UnexpectedResponseFormatException(
+                $request,
+                $response,
+                'Errors and notification id are mutually exclusive'
+            );
+        } elseif ($id) {
+            if ($recipients < 1) {
+                throw new UnexpectedResponseFormatException(
+                    $request,
+                    $response,
+                    'Empty recipients while notification is created'
+                );
+            }
+            $result = CreateNotificationResult::newFromNotificationId($id, $recipients, $request, $response);
+        } elseif ($errorList) {
+            $result = CreateNotificationResult::newFromErrors($errorList, $request, $response);
+        } else { // !$id && !$errorList
+            throw new UnexpectedResponseFormatException($request, $response, 'Errors and notification id are empty');
+        }
+
+        if ($externalId) {
+            $result->setExternalId($externalId);
+        }
+
+        if ($invalidExternalUserIds) {
+            $result->setInvalidExternalUserIds($invalidExternalUserIds);
+        }
+
+        if ($invalidPhoneNumbers) {
+            $result->setInvalidPhoneNumbers($invalidPhoneNumbers);
+        }
+
+        return $result;
     }
 
     /**

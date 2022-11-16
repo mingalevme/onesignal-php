@@ -122,7 +122,7 @@ $notification = PushNotification::createContentsNotification('text')
     ->addFilterTag('tag2', '>', 'value2')
     ->setSmallIcon('push_icon')
     ->setTtl(3600 * 3)
-    ->setIosCategory($'my-ios-category')
+    ->setIosCategory('my-ios-category')
     ->setExternalId('custom-notification-id');
 $result = $client->createNotification($notification);
 

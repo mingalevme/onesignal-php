@@ -100,8 +100,8 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     public function testItShouldReturnExternalId(): void
     {
         $responseBodyData = [
-            'id' => '',
-            'recipients' => 0,
+            'id' => 'notification-id',
+            'recipients' => 1,
             'external_id' => 'external-id',
         ];
         $client = $this->setUpClient($responseBodyData);
@@ -152,6 +152,46 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         self::assertSame(0, $result->getTotalNumberOfRecipients());
         self::assertCount(1, $result->getErrors() ?: []);
         self::assertSame('All included players are not subscribed', $result->getErrors()[0] ?? null);
+    }
+
+    public function testItShouldSendNotificationIfInvalidInvalidExternalUserIds(): void
+    {
+        $responseBodyData = [
+            'id' => 'notification-id',
+            'recipients' => 1,
+            'errors' => [
+                'invalid_external_user_ids' => ['786956'],
+            ],
+        ];
+        $client = $this->setUpClient($responseBodyData);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
+        $result = $client->createNotification($notification);
+        self::assertSame('notification-id', $result->getNotificationId());
+        self::assertSame(1, $result->getTotalNumberOfRecipients());
+        self::assertSame(null, $result->getErrors());
+        self::assertSame(['786956'], $result->getInvalidExternalUserIds());
+        self::assertSame(null, $result->getInvalidPhoneNumbers());
+    }
+
+    public function testItShouldSendNotificationIfInvalidInvalidPhoneNumbers(): void
+    {
+        $responseBodyData = [
+            'id' => 'notification-id',
+            'recipients' => 1,
+            'errors' => [
+                'invalid_phone_numbers' => ['+15555555555', '+14444444444'],
+            ],
+        ];
+        $client = $this->setUpClient($responseBodyData);
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
+        $result = $client->createNotification($notification);
+        self::assertSame('notification-id', $result->getNotificationId());
+        self::assertSame(1, $result->getTotalNumberOfRecipients());
+        self::assertSame(null, $result->getErrors());
+        self::assertSame(null, $result->getInvalidExternalUserIds());
+        self::assertSame(['+15555555555', '+14444444444'], $result->getInvalidPhoneNumbers());
     }
 
     public function testItShouldThrowErrorIfNotificationIdIsMissing(): void

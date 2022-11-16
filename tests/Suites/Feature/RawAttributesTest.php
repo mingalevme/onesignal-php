@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Mingalevme\Tests\OneSignal\Suites\Feature;
 
+use InvalidArgumentException;
+use Mingalevme\OneSignal\CreateNotificationOptions;
+use Mingalevme\OneSignal\Notification\PushNotification;
+
 class RawAttributesTest extends AbstractFeatureTestCase
 {
     public function testSettingRawValue(): void
@@ -21,5 +25,23 @@ class RawAttributesTest extends AbstractFeatureTestCase
             'attr3' => 'value3',
         ];
         self::assertNotificationHasAttributes($attributes, $notification);
+    }
+
+    public function testItShouldThrowErrorInCaseOfEmptyNotification(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Notification cannot be empty');
+        PushNotification::createContentsNotification('test')
+            ->setAttribute(CreateNotificationOptions::CONTENTS, null)
+            ->toOneSignalData();
+    }
+
+    public function testItShouldThrowErrorInCaseOfEmptyEnData(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid or missing default text of notification (content["en"])');
+        PushNotification::createContentsNotification([
+            'es' => 'es',
+        ])->toOneSignalData();
     }
 }

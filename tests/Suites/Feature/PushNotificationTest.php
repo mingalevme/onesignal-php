@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Mingalevme\Tests\OneSignal\Suites\Feature;
 
+use InvalidArgumentException;
 use Mingalevme\OneSignal\Notification\ActionButton;
 use Mingalevme\OneSignal\Notification\PushNotification;
 use Mingalevme\OneSignal\Notification\WebActionButton;
@@ -259,6 +260,13 @@ class PushNotificationTest extends AbstractFeatureTestCase
             'enable_frequency_cap' => true,
         ];
         self::assertNotificationHasAttributes($attributes, $notification);
+    }
+
+    public function testItShouldThrowErrorInInvalidIosRelevanceScore(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->createPushNotification()
+            ->setIosRelevanceScore(2);
     }
 
     private function createPushNotification(): PushNotification

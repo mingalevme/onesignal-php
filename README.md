@@ -5,7 +5,7 @@
 [![version](https://img.shields.io/packagist/v/mingalevme/onesignal?include_prereleases)](https://packagist.org/packages/mingalevme/onesignal)
 [![license](https://img.shields.io/packagist/l/mingalevme/onesignal)](https://packagist.org/packages/mingalevme/onesignal)
 
-Almost zero dependencies - only some PSRs and JSON-extension:
+Really simple and well tested OneSignal client (creating notifications only) with almost zero dependencies - only some PSRs and JSON-extension:
 - PHP 7.4+
 - PSR-17: HTTP Factories
 - PSR-18: HTTP Client

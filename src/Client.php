@@ -270,7 +270,7 @@ class Client implements ClientInterface
         $responseBody = $response->getBody()->getContents();
 
         if (!$responseBody) {
-            throw new ServerException($request, $response);
+            throw new ServerException($request, $response, 'Response body is empty');
         }
 
         try {

@@ -334,30 +334,42 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
 
     public function testItShouldThrowErrorInCaseOfEmptyResponseBody(): void
     {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('Response body is empty');
         $responseBodyData = null;
         $client = $this->setUpClient($responseBodyData);
         $notification = PushNotification::createContentsNotification('test')
             ->setIncludedSegments('All');
-        try {
-            $client->createNotification($notification);
-            $this->exceptionHasNotBeenThrown();
-        } catch (OneSignalException $e) {
-            self::assertInstanceOf(ServerException::class, $e);
-        }
+        $client->createNotification($notification);
+    }
+
+    public function testItShouldThrowErrorInCaseOfInvalidJson(): void
+    {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('Response body is not a valid JSON');
+        $response = $this->getPsrResponseFactory()
+            ->createResponse()
+            ->withBody($this->getPsrStreamFactory()->createStream('aaa'));
+        $psrHttpClient = new StaticResponsePsrHttpClient($response);
+        $this->psrHttpClient = $psrHttpClient;
+        $client = $this->getClientFactory()->create(
+            CreateClientOptions::new(self::APP_ID, self::REST_API_KEY)
+                ->withBaseUrl('https://myonesignal.com'),
+        );
+        $notification = PushNotification::createContentsNotification('test')
+            ->setIncludedSegments('All');
+        $client->createNotification($notification);
     }
 
     public function testItShouldThrowErrorInCaseOfInvalidResponseBodyFormat(): void
     {
+        $this->expectException(ServerException::class);
+        $this->expectExceptionMessage('Response body is not a valid JSON');
         $responseBodyData = 'aaa aaa';
         $client = $this->setUpClient($responseBodyData);
         $notification = PushNotification::createContentsNotification('test')
             ->setIncludedSegments('All');
-        try {
-            $client->createNotification($notification);
-            $this->exceptionHasNotBeenThrown();
-        } catch (OneSignalException $e) {
-            self::assertInstanceOf(ServerException::class, $e);
-        }
+        $client->createNotification($notification);
     }
 
     public function testItShouldThrowErrorInCaseOfInvalidErrorFormat(): void

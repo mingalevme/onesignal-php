@@ -1,5 +1,7 @@
 # Simple OneSignal PHP Client
 
+> **Warning**: **DEPRECATED**: DO NOT USE THAT VERSION OF LIBRARY!
+
 ```
 <?php
 

@@ -8,12 +8,14 @@ use Mingalevme\OneSignal\Exception\BadRequest;
 use Mingalevme\OneSignal\Exception\BadResponse;
 use Mingalevme\OneSignal\Exception\ServerError;
 use Mingalevme\OneSignal\Exception\ServiceUnavailable;
-use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
 
-class Client implements LoggerAwareInterface
+/**
+ * @deprecated
+ */
+class Client
 {
     const BASE_URL = 'https://onesignal.com/api/v1';
 
@@ -185,12 +187,13 @@ class Client implements LoggerAwareInterface
      * @param string $appId
      * @param string $restAPIKey
      * @param array|null $options
+     * @deprecated
      */
-    public function __construct($appId, $restAPIKey, array $options = null)
+    public function __construct($appId, $restAPIKey, array $options = null, LoggerInterface  $logger = null)
     {
         $this->appId = $appId;
         $this->restAPIKey = $restAPIKey;
-        $this->logger = new NullLogger();
+        $this->logger = $logger ?: new NullLogger();
 
         $options = (array)$options;
 
@@ -576,7 +579,7 @@ class Client implements LoggerAwareInterface
 
         $error = curl_error($ch);
 
-        $info = self::compressArray(
+        $info = array_filter(
             curl_getinfo($ch) + [
                 '_processed_in' => $processedIn,
                 '_curl_error' => $error ?: null,
@@ -643,24 +646,10 @@ class Client implements LoggerAwareInterface
     }
 
     /**
-     * Sets a logger instance on the object.
-     *
-     * @param LoggerInterface $logger
      * @return void
      */
     public function setLogger(LoggerInterface $logger)
     {
         $this->logger = $logger;
-    }
-
-    /**
-     * @param array $arr
-     * @return array
-     */
-    protected static function compressArray($arr)
-    {
-        return array_filter((array)$arr, function ($value) {
-            return boolval($value);
-        });
     }
 }

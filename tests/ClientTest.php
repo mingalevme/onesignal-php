@@ -31,23 +31,23 @@ class ClientTest extends TestCase
     public function testExport()
     {
         $url = self::$client->export();
-        $this->assertTrue(is_string(filter_var($url, \FILTER_VALIDATE_URL)));
+        self::assertTrue(is_string(filter_var($url, \FILTER_VALIDATE_URL)));
     }
 
     public function testGetAllPlayersViaExport()
     {
         $players = self::$client->getAllPlayersViaExport();
 
-        $this->assertTrue(is_array($players));
-        $this->assertTrue(count($players) > 0);
+        self::assertTrue(is_array($players));
+        self::assertGreaterThan(0, count($players));
     }
 
     public function testGetAllPlayersViaPlayers()
     {
         $players = self::$client->getAllPlayersViaPlayers();
 
-        $this->assertTrue(is_array($players));
-        $this->assertTrue(count($players) > 0);
+        self::assertTrue(is_array($players));
+        self::assertGreaterThan(0, count($players));
     }
 
     public function testSendWithoutAnyFilters()
@@ -61,15 +61,14 @@ class ClientTest extends TestCase
             return;
         }
         
-        $this->assertArrayHasKey('id', $result);
-        $this->assertArrayHasKey('recipients', $result);
+        self::assertArrayHasKey('id', $result);
+        self::assertArrayHasKey('recipients', $result);
     }
 
     public function testSendWithAppVersionFilter()
     {
         try {
             $result = self::$client->send('(Mingalevme\OneSignal) PHPUnit Test Message, sorry if you are reading me :)', null, null, [
-                Client::INCLUDED_SEGMENTS => ['All'],
                 Client::TTL => 1,
                 Client::FILTERS => [
                      [
@@ -83,17 +82,16 @@ class ClientTest extends TestCase
             return;
         }
 
-        $this->assertArrayHasKey('id', $result);
-        $this->assertArrayHasKey('recipients', $result);
+        self::assertArrayHasKey('id', $result);
+        self::assertArrayHasKey('recipients', $result);
     }
 
     public function testSendWithWhereTag()
     {
         try {
-            $result = self::$client->send('(Mingalevme\OneSignal) PHPUnit Test Message, sorry if you are reading me :)', null, [
+            $result = self::$client->send('(Mingalevme\OneSignal) PHPUnit Test Message, sorry if you are reading this :)', null, [
                 'test1' => '1',
             ], [
-                Client::INCLUDED_SEGMENTS => ['All'],
                 Client::TTL => 1,
                 Client::TAGS => [
                     [
@@ -112,10 +110,11 @@ class ClientTest extends TestCase
                 ],
             ]);
         } catch (AllIncludedPlayersAreNotSubscribed $e) {
+            self::assertTrue(true);
             return;
         }
 
-        $this->assertArrayHasKey('id', $result);
-        $this->assertArrayHasKey('recipients', $result);
+        self::assertArrayHasKey('id', $result);
+        self::assertArrayHasKey('recipients', $result);
     }
 }

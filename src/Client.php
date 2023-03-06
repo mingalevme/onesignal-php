@@ -6,12 +6,12 @@ use InvalidArgumentException;
 use Mingalevme\OneSignal\Exception\AllIncludedPlayersAreNotSubscribed;
 use Mingalevme\OneSignal\Exception\BadRequest;
 use Mingalevme\OneSignal\Exception\BadResponse;
-use Mingalevme\OneSignal\Exception\InvalidPlayerIds;
 use Mingalevme\OneSignal\Exception\ServerError;
 use Mingalevme\OneSignal\Exception\ServiceUnavailable;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use RuntimeException;
 
 class Client implements LoggerAwareInterface
 {
@@ -132,7 +132,7 @@ class Client implements LoggerAwareInterface
     const SUMMARY_ARG_COUNT = 'summary_arg_count'; // iOS 12+
 
     // Platform to Deliver To
-    CONST IS_IOS = 'isIos';
+    const IS_IOS = 'isIos';
     const IS_ANDROID = 'isAndroid';
     const IS_ANY_WEB = 'isAnyWeb';
     const IS_EMAIL = 'isEmail';
@@ -163,7 +163,7 @@ class Client implements LoggerAwareInterface
     /** @var string */
     protected $appId;
 
-    /** @var string  */
+    /** @var string */
     protected $restAPIKey;
 
     /** @var string */
@@ -192,7 +192,7 @@ class Client implements LoggerAwareInterface
         $this->restAPIKey = $restAPIKey;
         $this->logger = new NullLogger();
 
-        $options = (array) $options;
+        $options = (array)$options;
 
         if (array_key_exists(self::OPTION_CURL_OPTIONS, $options)) {
             if (!is_array($options[self::OPTION_CURL_OPTIONS])) {
@@ -201,7 +201,9 @@ class Client implements LoggerAwareInterface
         }
 
         if (array_key_exists(self::OPTION_DEFAULT_SEGMENT, $options)) {
-            if (!is_string($options[self::OPTION_DEFAULT_SEGMENT]) || trim($options[self::OPTION_DEFAULT_SEGMENT]) === '') {
+            if (!is_string($options[self::OPTION_DEFAULT_SEGMENT]) || trim(
+                    $options[self::OPTION_DEFAULT_SEGMENT]
+                ) === '') {
                 throw new InvalidArgumentException('Invalid default segment option value');
             }
             $this->defaultSegment = trim($options[self::OPTION_DEFAULT_SEGMENT]);
@@ -217,10 +219,15 @@ class Client implements LoggerAwareInterface
      * @param array|null $payload
      * @param array|null $whereTags
      * @param array|null $extra
-     * @return mixed|null
+     * @return array{
+     *     id: non-empty-string,
+     *     external_id?: non-empty-string,
+     *     errors?: non-empty-list<non-empty-string>|non-empty-array<non-empty-string, non-empty-list<non-empty-string>>,
+     *     warnings?: non-empty-list<non-empty-string>,
+     * }
      * @throws Exception
      */
-    public function send($title=null, $payload=null, $whereTags=null, $extra=null)
+    public function send($title = null, $payload = null, $whereTags = null, $extra = null)
     {
         $content = [];
 
@@ -237,14 +244,16 @@ class Client implements LoggerAwareInterface
         }
 
         if ($payload) {
-            $data[self::DATA] = (array) $payload;
+            $data[self::DATA] = (array)$payload;
         }
 
         if ($extra) {
-            $data = array_merge($data, (array) $extra);
+            $data = array_merge($data, (array)$extra);
         }
 
-        if (count($content) > 0 && (isset($content['en']) === false || is_string($content['en']) === false || trim($content['en']) === '')) {
+        if (count($content) > 0 && (isset($content['en']) === false || is_string($content['en']) === false || trim(
+                    $content['en']
+                ) === '')) {
             throw new Exception('Invalid or missing default text of notification (content["en"])');
         }
 
@@ -254,7 +263,7 @@ class Client implements LoggerAwareInterface
 
         $tags = [];
 
-        foreach ((array) $whereTags as $key => $value) {
+        foreach ((array)$whereTags as $key => $value) {
             $tags["{$key}={$value}"] = [
                 'key' => $key,
                 'relation' => '=',
@@ -272,8 +281,8 @@ class Client implements LoggerAwareInterface
 
         foreach ($tags as $tag) {
             $data[self::FILTERS][] = [
-                'field' => 'tag',
-            ] + $tag;
+                    'field' => 'tag',
+                ] + $tag;
         }
 
         // You must include which players, segments, or tags you wish to send this notification to
@@ -285,15 +294,30 @@ class Client implements LoggerAwareInterface
 
         $url = self::BASE_URL . '/notifications';
 
-        $response = $this->request(self::POST, $url, $data);
+        /**
+         * @var array{
+         *     id?: string,
+         *     errors: list<non-empty-string>|array{invalid_player_ids: list<non-empty-string>}|array{invalid_phone_numbers: list<non-empty-string>},
+         *     warnings?: non-empty-list<non-empty-string>,
+         * } $response
+         */
+        $response = array_filter($this->request(self::POST, $url, $data));
 
-        if (isset($response['errors']['invalid_player_ids'])) {
-            throw new InvalidPlayerIds($response['errors']['invalid_player_ids']);
-        } elseif (isset($response['recipients']) && $response['recipients'] === 0) {
-            throw new AllIncludedPlayersAreNotSubscribed();
+        if (!empty($response['id'])) {
+            return $response;
         }
 
-        return $response;
+        $errors = isset($response['errors'])
+            ? $response['errors']
+            : [];
+
+        if ($errors) {
+            if (in_array('All included players are not subscribed', $errors, true)) {
+                throw new AllIncludedPlayersAreNotSubscribed();
+            }
+        }
+
+        throw new RuntimeException('Unknown response format');
     }
 
     /**
@@ -303,7 +327,7 @@ class Client implements LoggerAwareInterface
      * @param int $offset
      * @return array
      */
-    public function getPlayers($limit=null, $offset=null)
+    public function getPlayers($limit = null, $offset = null)
     {
         $data = [
             'app_id' => $this->appId,
@@ -355,12 +379,12 @@ class Client implements LoggerAwareInterface
         $data = [self::APP_ID => $this->appId];
 
         if ($extra) {
-            $data['extra_fields'] = (array) $extra;
+            $data['extra_fields'] = (array)$extra;
         }
 
         $response = $this->request(self::POST, $url, $data);
 
-        if ((bool) $response === false || isset($response['csv_file_url']) === false) {
+        if ((bool)$response === false || isset($response['csv_file_url']) === false) {
             throw new Exception('Unexpected error while requesting an players/csv_export');
         }
 
@@ -370,7 +394,9 @@ class Client implements LoggerAwareInterface
     public function getNextPlayerViaExport($extra = null, $tmpdir = null, $timeout = null)
     {
         $gzCsvUrl = $this->export($extra);
-        $fgz = ($tmpdir ? $tmpdir : sys_get_temp_dir()) . "/onesignal-players-{$this->appId}-" . date('Y-m-d-H-i-s') . '.csv.gz';
+        $fgz = ($tmpdir ? $tmpdir : sys_get_temp_dir()) . "/onesignal-players-{$this->appId}-" . date(
+                'Y-m-d-H-i-s'
+            ) . '.csv.gz';
         $fcsv = str_replace('.csv.gz', '.csv', $fgz);
 
         $this->downloadCsv(is_null($timeout) ? $this->csvDownloadingTimeout : $timeout, $gzCsvUrl, $fgz);
@@ -386,7 +412,7 @@ class Client implements LoggerAwareInterface
 
         $keys = fgetcsv($csvhandle);
 
-        if ((bool) $keys === false) {
+        if ((bool)$keys === false) {
             throw new Exception("Unexpected error while reading csv-file {$fcsv}");
         }
 
@@ -417,7 +443,7 @@ class Client implements LoggerAwareInterface
     {
         $players = [];
 
-        foreach($this->getNextPlayerViaExport($extra, $tmpdir, $timeout) as $player) {
+        foreach ($this->getNextPlayerViaExport($extra, $tmpdir, $timeout) as $player) {
             $players[] = $player;
         }
 
@@ -435,8 +461,6 @@ class Client implements LoggerAwareInterface
      */
     protected function downloadCsv($timeout, $src, $dest)
     {
-        // sleep(1); // fixes: ErrorException: gzopen(https://...): failed to open stream: HTTP request failed! HTTP/1.1 403 Forbidden
-
         $start = time();
 
         while ($timeout === 0 || time() - $start < $timeout) {
@@ -461,7 +485,10 @@ class Client implements LoggerAwareInterface
             }
         }
 
-        throw new Exception(file_get_contents($dest), "Maximum execution time of {$timeout}s exceeded while downloading a remote resource {$src}");
+        throw new Exception(
+            file_get_contents($dest),
+            "Maximum execution time of {$timeout}s exceeded while downloading a remote resource {$src}"
+        );
     }
 
     protected function ungzip($src, $dest)
@@ -507,7 +534,11 @@ class Client implements LoggerAwareInterface
         if ($method === self::POST) {
             curl_setopt($ch, \CURLOPT_POST, true);
             $headers[] = "Content-Type: application/json";
-            curl_setopt($ch, \CURLOPT_POSTFIELDS, json_encode($data, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
+            curl_setopt(
+                $ch,
+                \CURLOPT_POSTFIELDS,
+                json_encode($data, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)
+            );
         }
 
         curl_setopt($ch, \CURLOPT_HTTPHEADER, $headers);
@@ -529,17 +560,18 @@ class Client implements LoggerAwareInterface
 
         $start = microtime(true);
 
-        /** @var string $responseBody */
         $responseBody = curl_exec($ch);
 
         $processedIn = round(microtime(true) - $start, 3);
 
         $error = curl_error($ch);
 
-        $info = self::compressArray(curl_getinfo($ch) + [
-            '_processed_in' => $processedIn,
-            '_curl_error' => $error ?: null,
-        ]);
+        $info = self::compressArray(
+            curl_getinfo($ch) + [
+                '_processed_in' => $processedIn,
+                '_curl_error' => $error ?: null,
+            ]
+        );
 
         curl_close($ch);
 
@@ -566,7 +598,7 @@ class Client implements LoggerAwareInterface
             $responseData = null;
         }
 
-        if ($responseData === null) {
+        if (!is_array($responseData)) {
             throw new BadResponse('Response body is invalid', $responseBody, $info['http_code'], $info);
         }
 
@@ -617,7 +649,7 @@ class Client implements LoggerAwareInterface
      */
     protected static function compressArray($arr)
     {
-        return array_filter((array) $arr, function ($value) {
+        return array_filter((array)$arr, function ($value) {
             return boolval($value);
         });
     }

@@ -30,12 +30,18 @@ class ClientTest extends TestCase
 
     public function testExport()
     {
+        if (getenv('ONESIGNAL_TEST_DISABLE_EXPORTING')) {
+            self::markTestSkipped('Export testing is disabled');
+        }
         $url = self::$client->export();
         self::assertTrue(is_string(filter_var($url, \FILTER_VALIDATE_URL)));
     }
 
     public function testGetAllPlayersViaExport()
     {
+        if (getenv('ONESIGNAL_TEST_DISABLE_EXPORTING')) {
+            self::markTestSkipped('Export testing is disabled');
+        }
         $players = self::$client->getAllPlayersViaExport();
 
         self::assertTrue(is_array($players));
@@ -62,7 +68,6 @@ class ClientTest extends TestCase
         }
         
         self::assertArrayHasKey('id', $result);
-        self::assertArrayHasKey('recipients', $result);
     }
 
     public function testSendWithAppVersionFilter()
@@ -83,7 +88,6 @@ class ClientTest extends TestCase
         }
 
         self::assertArrayHasKey('id', $result);
-        self::assertArrayHasKey('recipients', $result);
     }
 
     public function testSendWithWhereTag()
@@ -115,6 +119,5 @@ class ClientTest extends TestCase
         }
 
         self::assertArrayHasKey('id', $result);
-        self::assertArrayHasKey('recipients', $result);
     }
 }

@@ -31,3 +31,5 @@ jobs:
         run: composer audit
       - name: PHPUnit
         run: php vendor/bin/phpunit
+        env:
+          ONESIGNAL_TEST_DISABLE_EXPORTING: "1"

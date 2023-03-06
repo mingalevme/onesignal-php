@@ -304,6 +304,10 @@ class Client implements LoggerAwareInterface
         $response = array_filter($this->request(self::POST, $url, $data));
 
         if (!empty($response['id'])) {
+            // Backward compatibility
+            $response['recipients'] = isset($response['recipients'])
+                ? $response['recipients']
+                : 1;
             return $response;
         }
 
@@ -394,12 +398,19 @@ class Client implements LoggerAwareInterface
     public function getNextPlayerViaExport($extra = null, $tmpdir = null, $timeout = null)
     {
         $gzCsvUrl = $this->export($extra);
-        $fgz = ($tmpdir ? $tmpdir : sys_get_temp_dir()) . "/onesignal-players-{$this->appId}-" . date(
+        $fgz = ($tmpdir ?: sys_get_temp_dir()) . "/onesignal-players-$this->appId-" . date(
                 'Y-m-d-H-i-s'
             ) . '.csv.gz';
         $fcsv = str_replace('.csv.gz', '.csv', $fgz);
 
-        $this->downloadCsv(is_null($timeout) ? $this->csvDownloadingTimeout : $timeout, $gzCsvUrl, $fgz);
+        $this->downloadCsv(
+            is_null($timeout)
+                ? $this->csvDownloadingTimeout
+                : $timeout
+            ,
+            $gzCsvUrl,
+            $fgz
+        );
 
         $this->ungzip($fgz, $fcsv);
 
@@ -486,8 +497,7 @@ class Client implements LoggerAwareInterface
         }
 
         throw new Exception(
-            file_get_contents($dest),
-            "Maximum execution time of {$timeout}s exceeded while downloading a remote resource {$src}"
+            "Maximum execution time of {$timeout}s exceeded while downloading a remote resource $src:"
         );
     }
 

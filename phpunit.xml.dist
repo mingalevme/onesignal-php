@@ -11,7 +11,12 @@
          failOnRisky="true"
          failOnWarning="true"
          verbose="true">
-    <php />
+    <php>
+        <env name="ONE_SIGNAL_TEST_APP_ID" value=""/>
+        <env name="ONE_SIGNAL_TEST_API_KEY" value=""/>
+        <env name="ONE_SIGNAL_TEST_DEFAULT_SEGMENT" value=""/>
+        <env name="ONE_SIGNAL_TEST_PLAYER_ID" value=""/>
+    </php>
     <testsuites>
         <testsuite name="Feature">
             <directory>./tests/Suites/Feature</directory>

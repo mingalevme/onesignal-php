@@ -7,15 +7,14 @@ namespace Mingalevme\OneSignal;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-class CreateNotificationResult implements CreateNotificationResultInterface
+class CreateNotificationResponse implements CreateNotificationResponseInterface
 {
     private RequestInterface $request;
     private ResponseInterface $response;
 
     /** @var non-empty-string|null */
     private ?string $notificationId = null;
-    /** @var int<0, max> */
-    private int $totalNumberOfRecipients = 0;
+
     /** @var non-empty-string|null */
     private ?string $externalId = null;
 
@@ -42,19 +41,16 @@ class CreateNotificationResult implements CreateNotificationResultInterface
 
     /**
      * @param non-empty-string $notificationId
-     * @param int<1, max> $recipients
      * @param RequestInterface $request
      * @param ResponseInterface $response
      * @return self
      */
     public static function newFromNotificationId(
         string $notificationId,
-        int $recipients,
         RequestInterface $request,
         ResponseInterface $response
     ): self {
         $self = new self($request, $response);
-        $self->totalNumberOfRecipients = $recipients;
         $self->notificationId = $notificationId;
         return $self;
     }
@@ -76,12 +72,6 @@ class CreateNotificationResult implements CreateNotificationResultInterface
     public function getNotificationId(): ?string
     {
         return $this->notificationId;
-    }
-
-    /** @return int<0, max>|null */
-    public function getTotalNumberOfRecipients(): ?int
-    {
-        return $this->totalNumberOfRecipients;
     }
 
     /**
@@ -144,7 +134,7 @@ class CreateNotificationResult implements CreateNotificationResultInterface
 
     /**
      * @param list<non-empty-string>|null $invalidPhoneNumbers
-     * @return CreateNotificationResult
+     * @return CreateNotificationResponse
      */
     public function setInvalidPhoneNumbers(?array $invalidPhoneNumbers): self
     {

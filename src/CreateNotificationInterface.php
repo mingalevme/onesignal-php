@@ -11,8 +11,8 @@ interface CreateNotificationInterface
 {
     /**
      * @param NotificationInterface $notification
-     * @return CreateNotificationResult
+     * @return CreateNotificationResponse
      * @throws OneSignalException
      */
-    public function createNotification(NotificationInterface $notification): CreateNotificationResultInterface;
+    public function createNotification(NotificationInterface $notification): CreateNotificationResponseInterface;
 }

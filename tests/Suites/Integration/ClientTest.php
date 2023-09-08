@@ -41,7 +41,6 @@ class ClientTest extends TestCase
                 ->setIncludedSegments($segment),
         );
         self::assertNotEmpty($result->getNotificationId());
-        self::assertGreaterThan(1, $result->getTotalNumberOfRecipients());
     }
 
     public function testSendingToActivePlayer(): void
@@ -54,7 +53,6 @@ class ClientTest extends TestCase
             ->setIncludePlayerIds($playerId);
         $result = $this->getClient()->createNotification($notification);
         self::assertNotEmpty($result->getNotificationId());
-        self::assertSame(1, $result->getTotalNumberOfRecipients());
     }
 
     public function testInvalidPlayerIdFormat(): void
@@ -78,7 +76,6 @@ class ClientTest extends TestCase
             ->addFilterTag('_foo', '=', '_bar');
         $result = $this->getClient()->createNotification($notification);
         self::assertSame(null, $result->getNotificationId());
-        self::assertSame(0, $result->getTotalNumberOfRecipients());
         self::assertCount(1, $result->getErrors() ?: []);
         self::assertSame('All included players are not subscribed', $result->getErrors()[0] ?? null);
     }

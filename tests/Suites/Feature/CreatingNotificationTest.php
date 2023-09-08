@@ -55,7 +55,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     {
         $responseBodyData = [
             'id' => 'foo-bar',
-            'recipients' => 1,
         ];
         $client = $this->setUpClient($responseBodyData);
         $notification = PushNotification::createContentsNotification('contents-en')
@@ -67,7 +66,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         $result = $client->createNotification($notification);
         //
         self::assertSame('foo-bar', $result->getNotificationId());
-        self::assertSame(1, $result->getTotalNumberOfRecipients());
         //
         self::assertCount(1, $this->getStaticResponsePsrHttpClient()->getRequests());
         $request = $this->getStaticResponsePsrHttpClient()->getLastRequest();
@@ -101,7 +99,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     {
         $responseBodyData = [
             'id' => 'notification-id',
-            'recipients' => 1,
             'external_id' => 'external-id',
         ];
         $client = $this->setUpClient($responseBodyData);
@@ -116,7 +113,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     {
         $responseBodyData = [
             'id' => 'foo-bar',
-            'recipients' => 1,
         ];
         $client = $this->setUpClient($responseBodyData);
         $notification = PushNotification::createContentsNotification([
@@ -139,7 +135,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     {
         $responseBodyData = [
             'id' => '',
-            'recipients' => 0,
             'errors' => [
                 'All included players are not subscribed',
             ],
@@ -149,7 +144,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             ->setIncludedSegments('All');
         $result = $client->createNotification($notification);
         self::assertSame(null, $result->getNotificationId());
-        self::assertSame(0, $result->getTotalNumberOfRecipients());
         self::assertCount(1, $result->getErrors() ?: []);
         self::assertSame('All included players are not subscribed', $result->getErrors()[0] ?? null);
     }
@@ -158,7 +152,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     {
         $responseBodyData = [
             'id' => 'notification-id',
-            'recipients' => 1,
             'errors' => [
                 'invalid_external_user_ids' => ['786956'],
             ],
@@ -168,7 +161,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             ->setIncludedSegments('All');
         $result = $client->createNotification($notification);
         self::assertSame('notification-id', $result->getNotificationId());
-        self::assertSame(1, $result->getTotalNumberOfRecipients());
         self::assertSame(null, $result->getErrors());
         self::assertSame(['786956'], $result->getInvalidExternalUserIds());
         self::assertSame(null, $result->getInvalidPhoneNumbers());
@@ -178,7 +170,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     {
         $responseBodyData = [
             'id' => 'notification-id',
-            'recipients' => 1,
             'errors' => [
                 'invalid_phone_numbers' => ['+15555555555', '+14444444444'],
             ],
@@ -188,7 +179,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
             ->setIncludedSegments('All');
         $result = $client->createNotification($notification);
         self::assertSame('notification-id', $result->getNotificationId());
-        self::assertSame(1, $result->getTotalNumberOfRecipients());
         self::assertSame(null, $result->getErrors());
         self::assertSame(null, $result->getInvalidExternalUserIds());
         self::assertSame(['+15555555555', '+14444444444'], $result->getInvalidPhoneNumbers());
@@ -198,23 +188,6 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
     {
         $responseBodyData = [
             'id' => '',
-            'recipients' => 1,
-        ];
-        $client = $this->setUpClient($responseBodyData);
-        $notification = PushNotification::createContentsNotification('test')
-            ->setIncludedSegments('All');
-        try {
-            $client->createNotification($notification);
-            $this->exceptionHasNotBeenThrown();
-        } catch (OneSignalException $e) {
-            self::assertInstanceOf(UnexpectedResponseFormatException::class, $e);
-        }
-    }
-
-    public function testItShouldThrowErrorIfRecipientsIsMissing(): void
-    {
-        $responseBodyData = [
-            'id' => 'id',
         ];
         $client = $this->setUpClient($responseBodyData);
         $notification = PushNotification::createContentsNotification('test')

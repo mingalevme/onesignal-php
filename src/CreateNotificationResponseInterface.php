@@ -7,13 +7,10 @@ namespace Mingalevme\OneSignal;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-interface CreateNotificationResultInterface
+interface CreateNotificationResponseInterface
 {
     /** @return non-empty-string|null */
     public function getNotificationId(): ?string;
-
-    /** @return int<0, max>|null */
-    public function getTotalNumberOfRecipients(): ?int;
 
     /**
      * @return non-empty-string|null

@@ -29,6 +29,12 @@ jobs:
         run: composer install --prefer-dist --no-progress
       - name: Security audit
         run: composer audit
+      - name: ComposerRequireChecker
+        run: composer composer-require-checker
+      - name: Composer Unused
+        run: composer composer-unused
+      - name: composer-normalize
+        run: composer normalize --dry-run
       - name: PHPUnit
         run: php vendor/bin/phpunit --coverage-clover coverage.xml
         env:

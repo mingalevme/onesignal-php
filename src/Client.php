@@ -71,7 +71,7 @@ class Client implements ClientInterface
         $this->psrStreamFactory = $psrStreamFactory;
     }
 
-    public function createNotification(NotificationInterface $notification): CreateNotificationResult
+    public function createNotification(NotificationInterface $notification): CreateNotificationResponse
     {
         $data = $notification->toOneSignalData() + [
                 self::APP_ID => $this->appId,
@@ -81,19 +81,8 @@ class Client implements ClientInterface
 
         $response = $this->makePostRequest($url, $data, $request);
 
-        /** @var array{id?: ?string, recipients?: ?int, errors?: list<string>|array<string, mixed>, external_id?: ?non-empty-string} $responseData */
+        /** @var array{id?: ?string, errors?: list<string>|array<string, mixed>, external_id?: ?non-empty-string} $responseData */
         $responseData = $this->parseResponse($request, $response);
-
-        /** @var int<0, max>|mixed|null $recipients */
-        $recipients = $responseData['recipients'] ?? null;
-
-        if ($recipients === null) {
-            $recipients = 0;
-        } elseif (!is_int($recipients) || $recipients < 0) {
-            throw new UnexpectedResponseFormatException($request, $response, 'Invalid value of recipients');
-        }
-
-        /** @var int<0, max> $recipients */
 
         /** @var non-empty-string|mixed|null $id */
         $id = $responseData['id'] ?? null;
@@ -102,16 +91,8 @@ class Client implements ClientInterface
             $id = null;
         }
 
-        if ($recipients > 0 && empty($id)) {
-            throw new UnexpectedResponseFormatException($request, $response, 'Missing notification id');
-        }
-
         if (!empty($id) && !is_string($id)) {
             throw new UnexpectedResponseFormatException($request, $response, 'Invalid notification id');
-        }
-
-        if (!empty($id) && empty($recipients)) {
-            throw new UnexpectedResponseFormatException($request, $response, 'Missing recipients');
         }
 
         /** @var mixed|null $externalId */
@@ -149,17 +130,12 @@ class Client implements ClientInterface
                 $response,
                 'Errors and notification id are mutually exclusive'
             );
-        } elseif ($id) {
-            if ($recipients < 1) {
-                throw new UnexpectedResponseFormatException(
-                    $request,
-                    $response,
-                    'Empty recipients while notification is created'
-                );
-            }
-            $result = CreateNotificationResult::newFromNotificationId($id, $recipients, $request, $response);
+        }
+
+        if ($id) {
+            $result = CreateNotificationResponse::newFromNotificationId($id, $request, $response);
         } elseif ($errorList) {
-            $result = CreateNotificationResult::newFromErrors($errorList, $request, $response);
+            $result = CreateNotificationResponse::newFromErrors($errorList, $request, $response);
         } else { // !$id && !$errorList
             throw new UnexpectedResponseFormatException($request, $response, 'Errors and notification id are empty');
         }

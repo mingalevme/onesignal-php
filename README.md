@@ -138,7 +138,6 @@ $result = $client->createNotification($notification);
 
 echo <<<END
 Notification has been successfully sent to OneSignal: #{$result->getNotificationId()}.
-Total recipients: {$result->getTotalNumberOfRecipients()}.
 END;
 ```
 

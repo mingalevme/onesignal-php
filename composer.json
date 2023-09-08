@@ -1,20 +1,35 @@
 {
     "name": "mingalevme/onesignal",
     "description": "Simple OneSignal PHP Client",
-    "homepage": "https://github.com/mingalevme/onesignal-php",
     "license": "MIT",
-    "keywords": ["onesignal"],
+    "keywords": [
+        "onesignal"
+    ],
     "authors": [
         {
             "name": "Mikhail Mingaev",
             "email": "mingalevme@gmail.com"
         }
     ],
+    "homepage": "https://github.com/mingalevme/onesignal-php",
     "require": {
         "php": ">=7.4.0",
         "ext-json": "*",
+        "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0",
-        "psr/http-client": "^1.0"
+        "psr/http-message": "^2.0"
+    },
+    "require-dev": {
+        "ergebnis/composer-normalize": "^2.28",
+        "friendsofphp/php-cs-fixer": "^3.26",
+        "guzzlehttp/guzzle": "^7.5",
+        "icanhazstring/composer-unused": "^0.8.10",
+        "maglnet/composer-require-checker": "^3.8 || ^4.4",
+        "phpstan/phpstan": "^1.9",
+        "phpunit/phpunit": "^9.5",
+        "squizlabs/php_codesniffer": "^3.7",
+        "vimeo/psalm": "^4.30",
+        "vlucas/phpdotenv": "^5.5"
     },
     "suggest": {
         "guzzlehttp/guzzle": "^7.5"
@@ -29,12 +44,32 @@
             "Mingalevme\\Tests\\OneSignal\\": "tests/"
         }
     },
-    "require-dev": {
-        "phpunit/phpunit": "^9.5",
-        "guzzlehttp/guzzle": "^7.5",
-        "vlucas/phpdotenv": "^5.5",
-        "squizlabs/php_codesniffer": "^3.7",
-        "vimeo/psalm": "^4.30",
-        "phpstan/phpstan": "^1.9"
+    "config": {
+        "allow-plugins": {
+            "ergebnis/composer-normalize": true
+        }
+    },
+    "scripts": {
+        "composer-require-checker": "@php -d xdebug.mode=off vendor/bin/composer-require-checker",
+        "composer-unused": "@php -d xdebug.mode=off vendor/bin/composer-unused --excludeDir=resources--excludeDir=vendor",
+        "php-cs-fixer": "@php-cs-fixer-fix",
+        "php-cs-fixer-dry": "@php -d memory_limit=512M -d xdebug.mode=off vendor/bin/php-cs-fixer fix --dry-run --diff",
+        "php-cs-fixer-fix": "@php -d memory_limit=512M -d xdebug.mode=off vendor/bin/php-cs-fixer fix",
+        "phpcs": "@php -d memory_limit=512M -d xdebug.mode=off vendor/bin/phpcs -p",
+        "phpstan": "@php -d memory_limit=1024M -d xdebug.mode=off vendor/bin/phpstan analyse",
+        "phpunit": "@php -d memory_limit=512M -d xdebug.mode=off vendor/bin/phpunit",
+        "psalm": "@php -d memory_limit=1024M -d xdebug.mode=off vendor/bin/psalm",
+        "q": "@quality",
+        "quality": [
+            "@composer audit",
+            "@composer-require-checker",
+            "@composer-unused",
+            "@composer normalize --dry-run",
+            "@phpcs",
+            "@php-cs-fixer-dry",
+            "@psalm",
+            "@phpstan",
+            "@phpunit"
+        ]
     }
 }

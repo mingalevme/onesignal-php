@@ -39,7 +39,7 @@ class ClientFactory implements ClientFactoryInterface
             $createClientOptions,
             $this->psrHttpClient,
             $this->psrRequestFactory,
-            $this->psrStreamFactory
+            $this->psrStreamFactory,
         );
     }
 }

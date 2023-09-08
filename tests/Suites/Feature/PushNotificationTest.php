@@ -175,7 +175,7 @@ class PushNotificationTest extends AbstractFeatureTestCase
             ->setIosBadgeCount(99)
             ->setApnsAlert([
                 'loc-key' => 'GAME_PLAY_REQUEST_FORMAT',
-                'loc-args' => ["Jenna", "Frank"],
+                'loc-args' => ['Jenna', 'Frank'],
             ]);
         $attributes = [
             'android_channel_id' => '123e4567-e89b-12d3-a456-426655440000',

@@ -12,8 +12,6 @@ use Psr\Http\Client\ClientInterface as PsrHttpClient;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use RuntimeException;
 
 class TestCase extends \PHPUnit\Framework\TestCase
@@ -47,7 +45,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
         return new ClientFactory(
             $this->getPsrHttpClient(),
             $this->getPsrRequestFactory(),
-            $this->getPsrStreamFactory()
+            $this->getPsrStreamFactory(),
         );
     }
 

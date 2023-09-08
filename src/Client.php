@@ -24,8 +24,6 @@ use Psr\Http\Message\StreamFactoryInterface as PsrStreamFactory;
 use RuntimeException;
 use Throwable;
 
-use function json_decode;
-
 use const JSON_UNESCAPED_SLASHES;
 use const JSON_UNESCAPED_UNICODE;
 
@@ -128,7 +126,7 @@ class Client implements ClientInterface
             throw new UnexpectedResponseFormatException(
                 $request,
                 $response,
-                'Errors and notification id are mutually exclusive'
+                'Errors and notification id are mutually exclusive',
             );
         }
 

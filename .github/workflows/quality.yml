@@ -42,6 +42,8 @@ jobs:
           ONE_SIGNAL_TEST_API_KEY: "${{ secrets.ONE_SIGNAL_TEST_API_KEY }}"
           ONE_SIGNAL_TEST_DEFAULT_SEGMENT: "${{ secrets.ONE_SIGNAL_TEST_DEFAULT_SEGMENT }}"
           ONE_SIGNAL_TEST_PLAYER_ID: "${{ secrets.ONE_SIGNAL_TEST_PLAYER_ID }}"
+      - name: PHP CS Fixer
+        run: php -dxdebug.mode=off vendor/bin/php-cs-fixer fix --dry-run --diff
       - name: Psalm
         run: php -dxdebug.mode=off vendor/bin/psalm
       - name: PHPStan

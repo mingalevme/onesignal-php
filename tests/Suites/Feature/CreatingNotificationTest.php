@@ -69,7 +69,7 @@ class CreatingNotificationTest extends AbstractFeatureTestCase
         //
         self::assertCount(1, $this->getStaticResponsePsrHttpClient()->getRequests());
         $request = $this->getStaticResponsePsrHttpClient()->getLastRequest();
-        self::assertSame("Basic " . self::REST_API_KEY, $request->getHeaderLine('Authorization'));
+        self::assertSame('Basic ' . self::REST_API_KEY, $request->getHeaderLine('Authorization'));
         $request->getBody()->rewind();
         $requestBodyData = $this->jsonDecode($request->getBody()->getContents());
         self::assertSame(self::APP_ID, $requestBodyData['app_id'] ?? null);

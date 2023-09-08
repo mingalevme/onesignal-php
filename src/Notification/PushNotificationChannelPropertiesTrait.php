@@ -72,7 +72,6 @@ trait PushNotificationChannelPropertiesTrait
     }
 
     /**
-     *
      * Always defaults to true and cannot be turned off.
      *
      * Allows tracking of notification receives and changing of the notification content in your app
@@ -281,7 +280,7 @@ trait PushNotificationChannelPropertiesTrait
      */
     public function setButtons(array $value): self
     {
-        $data = array_map(fn(ActionButton $button) => $button->toOneSignalActionButton(), $value);
+        $data = array_map(fn (ActionButton $button) => $button->toOneSignalActionButton(), $value);
         return $this->setAttribute(CNO::BUTTONS, $data);
     }
 
@@ -298,7 +297,7 @@ trait PushNotificationChannelPropertiesTrait
      */
     public function setWebButtons(array $value): self
     {
-        $data = array_map(fn(WebActionButton $button) => $button->toOneSignalActionButton(), $value);
+        $data = array_map(fn (WebActionButton $button) => $button->toOneSignalActionButton(), $value);
         return $this->setAttribute(CNO::WEB_BUTTONS, $data);
     }
 

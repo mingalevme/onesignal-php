@@ -70,7 +70,7 @@ final class PushNotification extends AbstractNotification
         if (!empty($data[CNO::DELIVERY_TIME_OF_DAY])) {
             if (($data[CNO::DELAYED_OPTION] ?? null) !== CNO::DELAYED_OPTION_TIMEZONE) {
                 throw new InvalidArgumentException(
-                    'delivery_time_of_day mist be used with delayed_option=timezone'
+                    'delivery_time_of_day mist be used with delayed_option=timezone',
                 );
             }
         }
